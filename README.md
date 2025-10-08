@@ -5,6 +5,14 @@ Players select from unique heroes with different kits, battle AI opponents, and 
 
 ---
 
+## ⚠️ Disclaimer
+
+This project is a **proof of concept** and very much a **work in progress**.  
+Expect many bugs, placeholder features, and incomplete mechanics.  
+The code is being actively developed and refactored — stability is not guaranteed.
+
+---
+
 ## 🎮 Gameplay
 
 - **Hero Selection**: Choose from multiple heroes, each with distinct abilities, roles, and ammo capacities.
