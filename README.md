@@ -1,6 +1,6 @@
 # 2D Hero Shooter
 
-A fast-paced, top-down hero shooter inspired by Overwatch, built in **HTML5 Canvas + JavaScript**.  
+A fast-paced, top-down 2D hero shooter built in **HTML5 Canvas + JavaScript**.  
 Players select from unique heroes with different kits, battle AI opponents, and fight to capture control points.
 
 ---
