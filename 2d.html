@@ -1,0 +1,3953 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Team Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0f0f1e;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e0;
+        }
+
+        canvas {
+            display: block;
+            cursor: none;
+        }
+
+        /* --- UI STYLES --- */
+        .ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(15, 15, 30, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .ui-panel {
+            background: linear-gradient(145deg, #1a1a3e, #16213e);
+            border: 1px solid #00ffff;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3),
+                        inset 0 0 15px rgba(0, 255, 255, 0.1);
+        }
+
+        .menu-button {
+            background: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        .menu-button:hover {
+            background: #00ffff;
+            color: #0f0f1e;
+            box-shadow: 0 0 20px #00ffff;
+            transform: scale(1.05);
+        }
+
+        .pause-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* --- Hero Select Styles --- */
+        #heroSelectPanel {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            padding: 0;
+        }
+
+        .hero-card {
+            flex: 1 1 0;
+            margin: 0;
+            border: 2px solid #444;
+            border-radius: 0;
+            padding: 12px;
+            background: rgba(20, 20, 30, 0.9);
+            box-shadow: 0 0 8px rgba(0,0,0,0.6);
+            cursor: pointer;
+            width: 120px;
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hero-card.hovered {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,255,255,0.6);
+            background: rgba(0, 255, 255, 0.1);
+            border-color: #00ffff;
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        .hero-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        .hero-name {
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- Hero Info Panel --- */
+        #heroInfoPanel {
+            position: relative;
+            right: auto;
+            top: auto;
+            transform: none;
+            margin-left: 20px;
+            width: 30%;
+            max-height: 80%;
+        }
+        #heroInfoPanel h2 {
+            color: #00ffff;
+            text-align: center;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+        #heroInfoPanel h3 {
+            color: #f0e68c;
+            margin-top: 20px;
+        }
+        #heroInfoPanel p, #heroInfoPanel li {
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        #heroInfoPanel ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        #heroInfoPanel li {
+            margin-bottom: 10px;
+        }
+        .ability-name {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        .cooldown {
+            color: #ff8c00;
+            font-style: italic;
+        }
+        .keybind {
+            color: #f0e68c;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        /* --- In-Game Hero UI --- */
+        #heroUI {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid;
+            background: rgba(22, 33, 62, 0.8);
+            display: none;
+            transition: all 0.3s ease;
+        }
+        #heroUI h3 {
+            margin: 0 0 10px 0;
+            padding: 0;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #heroUI.hero-ui-active {
+            box-shadow: 0 0 30px currentColor;
+            border-width: 3px;
+            transform: scale(1.05);
+        }
+        #healthBar {
+            width: 200px;
+            height: 20px;
+            background: rgba(50, 50, 50, 0.7);
+            border: 1px solid #00ffff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #healthBarFill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #ff4136, #ff851b);
+            transition: width 0.3s ease;
+        }
+
+        /* --- Ability Bar UI --- */
+        #abilityBar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(22, 33, 62, 0.7);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            align-items: flex-end;
+        }
+        .ability-slot {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #4a4a6a;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            color: #888;
+            text-shadow: 0 0 5px black;
+            font-weight: bold;
+        }
+        .ability-slot.ready {
+            border-color: #00ffff;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        .ability-slot.ultimate {
+            border-color: #f0e68c;
+            color: #f0e68c;
+            text-shadow: 0 0 10px #f0e68c;
+        }
+        .ability-slot.ultimate.ready {
+            animation: pulse-ultimate 1.5s infinite;
+        }
+        @keyframes pulse-ultimate {
+            0% { box-shadow: 0 0 5px #f0e68c; }
+            50% { box-shadow: 0 0 20px #f0e68c, 0 0 30px #f0e68c; }
+            100% { box-shadow: 0 0 5px #f0e68c; }
+        }
+        .ability-keybind {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 10px;
+            color: #ccc;
+            font-family: monospace;
+        }
+        .cooldown-overlay, .charge-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 15, 30, 0.8);
+            border-radius: 6px;
+            transition: height 0.1s linear;
+        }
+        .charge-overlay {
+            background: linear-gradient(to top, #f0e68c, #fff700);
+        }
+        
+        /* --- Ammo Counter UI --- */
+        #ammoCounter {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #00ffff;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ffff;
+            display: none;
+        }
+        
+        /* --- Team UI --- */
+        #teamUI {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            background: rgba(22, 33, 62, 0.7);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 10px;
+            display: none;
+        }
+        
+        .team-header {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .team-member {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .team-member-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+        
+        .team-member-info {
+            flex: 1;
+        }
+        
+        .team-member-name {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .team-member-health {
+            height: 4px;
+            background: rgba(50, 50, 50, 0.7);
+            border-radius: 2px;
+            margin-top: 3px;
+            overflow: hidden;
+        }
+        
+        .team-member-health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4136, #ff851b);
+        }
+        
+        .enemy-team {
+            margin-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-top: 10px;
+        }
+        
+        .enemy-team-header {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #ff4136;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .enemy-member {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .enemy-member-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+        
+        .enemy-member-info {
+            flex: 1;
+        }
+        
+        .enemy-member-name {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .enemy-member-health {
+            height: 4px;
+            background: rgba(50, 50, 50, 0.7);
+            border-radius: 2px;
+            margin-top: 3px;
+            overflow: hidden;
+        }
+        
+        .enemy-member-health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4136, #ff851b);
+        }
+        
+        /* --- Score UI --- */
+        #scoreUI {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(22, 33, 62, 0.7);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 10px 20px;
+            display: none;
+            text-align: center;
+        }
+        
+        .score-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .score-team {
+            display: inline-block;
+            margin: 0 15px;
+        }
+        
+        .score-value {
+            font-size: 1.2em;
+        }
+        
+        /* --- Minimap --- */
+        #minimap {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 10px;
+            display: none;
+        }
+        
+        /* --- Victory/Defeat Screen --- */
+        #gameEndScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+        
+        .game-end-panel {
+            background: linear-gradient(145deg, #1a1a3e, #16213e);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3);
+        }
+        
+        .game-end-title {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .victory-title {
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+        }
+        
+        .defeat-title {
+            color: #ff4136;
+            text-shadow: 0 0 20px #ff4136;
+        }
+        
+        .game-end-stats {
+            margin: 20px 0;
+            font-size: 1.2em;
+        }
+        
+        .game-end-button {
+            background: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+        
+        .game-end-button:hover {
+            background: #00ffff;
+            color: #0f0f1e;
+            box-shadow: 0 0 20px #00ffff;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Main Menu UI -->
+    <div id="mainMenu" class="ui-container">
+        <div class="ui-panel">
+            <h1 style="color: #00ffff; margin-top:0;">Team Arena</h1>
+            <button class="menu-button" id="startButton">Start Game</button>
+        </div>
+    </div>
+
+    <!-- Hero Selection UI -->
+    <div id="heroSelect" class="ui-container">
+        <div class="ui-panel">
+            <h1 style="color: #00ffff; margin-top:0;">Select Hero</h1>
+            <div id="heroSelectPanel"></div>
+        </div>
+        <!-- Hero Info Panel -->
+        <div id="heroInfoPanel"></div>
+    </div>
+
+    <!-- Pause Menu UI -->
+    <div id="pauseMenu" class="ui-container">
+        <div class="ui-panel">
+            <h1>PAUSED</h1>
+            <div class="pause-buttons">
+                <button class="menu-button" id="resumeButton">Resume</button>
+                <button class="menu-button" id="mainMenuButton">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- In-Game Hero UI -->
+    <div id="heroUI">
+        <h3 id="heroNameDisplay">Hero</h3>
+        <div id="healthBar"><div id="healthBarFill"></div></div>
+    </div>
+
+    <!-- Ability Bar UI -->
+    <div id="abilityBar">
+        <div class="ability-slot" id="ability-LMB">
+            <span></span>
+            <div class="ability-keybind">LMB</div>
+            <div class="cooldown-overlay"></div>
+        </div>
+        <div class="ability-slot" id="ability-RMB">
+            <span></span>
+            <div class="ability-keybind">RMB</div>
+            <div class="cooldown-overlay"></div>
+        </div>
+        <div class="ability-slot" id="ability-E">
+            <span></span>
+            <div class="ability-keybind">E</div>
+            <div class="cooldown-overlay"></div>
+        </div>
+        <div class="ability-slot" id="ability-Shift">
+            <span></span>
+            <div class="ability-keybind">SHIFT</div>
+            <div class="cooldown-overlay"></div>
+        </div>
+        <div class="ability-slot ultimate" id="ability-Ult">
+            <span></span>
+            <div class="ability-keybind">Q</div>
+            <div class="charge-overlay"></div>
+        </div>
+    </div>
+    
+    <!-- Ammo Counter UI -->
+    <div id="ammoCounter">8 / 8</div>
+    
+    <!-- Team UI -->
+    <div id="teamUI">
+        <div class="team-header">Your Team</div>
+        <div id="teamMembers"></div>
+        <div class="enemy-team">
+            <div class="enemy-team-header">Enemy Team</div>
+            <div id="enemyMembers"></div>
+        </div>
+    </div>
+    
+    <!-- Score UI -->
+    <div id="scoreUI">
+        <div class="score-display">
+            <span class="score-team" style="color: #00ffff;">Blue: <span class="score-value" id="blueScore">0%</span></span>
+            <span class="score-team" style="color: #ff4136;">Red: <span class="score-value" id="redScore">0%</span></span>
+        </div>
+    </div>
+    
+    <!-- Minimap -->
+    <canvas id="minimap"></canvas>
+    
+    <!-- Victory/Defeat Screen -->
+    <div id="gameEndScreen">
+        <div class="game-end-panel">
+            <h1 class="game-end-title" id="gameEndTitle">VICTORY</h1>
+            <div class="game-end-stats">
+                <div>Kills: <span id="playerKills">0</span></div>
+                <div>Deaths: <span id="playerDeaths">0</span></div>
+                <div>Assists: <span id="playerAssists">0</span></div>
+            </div>
+            <button class="game-end-button" id="playAgainButton">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const minimap = document.getElementById('minimap');
+        const minimapCtx = minimap.getContext('2d');
+
+        // --- UI ELEMENTS ---
+        const mainMenuEl = document.getElementById('mainMenu');
+        const heroSelectEl = document.getElementById('heroSelect');
+        const pauseMenuEl = document.getElementById('pauseMenu');
+        const heroUIEl = document.getElementById('heroUI');
+        const heroNameDisplayEl = document.getElementById('heroNameDisplay');
+        const healthBarFillEl = document.getElementById('healthBarFill');
+        const abilityBarEl = document.getElementById('abilityBar');
+        const ammoCounterEl = document.getElementById('ammoCounter');
+        const heroInfoPanelEl = document.getElementById('heroInfoPanel');
+        const startButton = document.getElementById('startButton');
+        const resumeButton = document.getElementById('resumeButton');
+        const mainMenuButton = document.getElementById('mainMenuButton');
+        const heroSelectPanel = document.getElementById('heroSelectPanel');
+        const teamUIEl = document.getElementById('teamUI');
+        const scoreUIEl = document.getElementById('scoreUI');
+        const gameEndScreenEl = document.getElementById('gameEndScreen');
+        const gameEndTitleEl = document.getElementById('gameEndTitle');
+        const playerKillsEl = document.getElementById('playerKills');
+        const playerDeathsEl = document.getElementById('playerDeaths');
+        const playerAssistsEl = document.getElementById('playerAssists');
+        const playAgainButton = document.getElementById('playAgainButton');
+        const blueScoreEl = document.getElementById('blueScore');
+        const redScoreEl = document.getElementById('redScore');
+
+        // --- CONFIGURATION ---
+        const WORLD_WIDTH = 5000;
+        const WORLD_HEIGHT = 5000;
+        const PLAYER_SPEED = 5;
+        const PLAYER_SIZE = 15;
+        const HEX_SIZE = 40;
+        const NUM_PARTICLES = 150;
+        const RESELECT_HOLD_TIME = 1500;
+        const TEAM_SIZE = 3; // 3v3 for now, but designed for 5v5
+        const RELOAD_TIME = 2000;
+        const MAX_AMMO = 8;
+        const PLAYER_MAX_HEALTH = 200;
+        const ENEMY_MAX_HEALTH = 200;
+        const ULT_MAX_CHARGE = 100;
+        const ULT_PASSIVE_CHARGE_RATE = 1;
+        const ULT_DAMAGE_CHARGE_FACTOR = 0.5;
+        const RESPAWN_TIME = 3000;
+        const VICTORY_SCORE = 100; // Changed to 100% capture for victory
+        const CAPTURE_POINT_RADIUS = 100;
+        const CAPTURE_RATE = 0.02;
+        const MAX_CAPTURE_PROGRESS = 100;
+        const SEPARATION_RADIUS = 50; // New: minimum spacing between units
+        const GRID_SIZE = 75; // New: spatial hash grid size
+
+        // --- COLORS ---
+        const colors = {
+            background: '#0f0f1e',
+            grid: '#1a1a3e',
+            player: '#00ffff',
+            cursor: '#ff00ff',
+            particle: 'rgba(255, 255, 255, 0.5)',
+            spawnArea: 'rgba(0, 255, 255, 0.15)',
+            spawnAreaBorder: '#00ffff',
+            enemy: '#ff0000',
+            enemyAffected: '#ff6666',
+            blueTeam: '#00aaff',
+            redTeam: '#ff3333',
+            capturePoint: '#ffff00'
+        };
+        
+        // --- HERO DATA ---
+        const heroes = [
+            { // Hero 1: Flux
+                name: 'Flux',
+                role: 'Disruptor / Controller',
+                theme: 'A scientist turned rogue, wielding portable singularities and warped space.',
+                color: '#00ffff',
+                maxAmmo: 8,
+                abilities: {
+                    LMB: { name: 'Graviton Bolt', cooldown: 400, icon: '>', damage: 15, aoeDamage: 25, description: 'Fires a bolt that explodes at a medium range, dealing area damage.' },
+                    RMB: { name: 'Repulsion Wave', cooldown: 4000, icon: '⋙', description: 'A quick cone blast that shoves enemies back.' },
+                    E: { name: 'Singularity Orb', cooldown: 12000, icon: '◎', description: 'Tosses a hovering orb that activates after a short delay, pulling enemies inward while slowing them.' },
+                    Shift: { name: 'Gravity Well', cooldown: 15000, icon: '⦿', description: 'Creates a 3-meter aura around Flux for 5 seconds. Allies inside feel "lightened", enemies feel "heavier".' },
+                    Ult: { name: 'Event Horizon (Q)', icon: '◉', description: 'Unleashes a massive gravitational field for 5 seconds. Ult.' }
+                }
+            },
+            { // Hero 2: Aegis
+                name: 'Aegis',
+                role: 'Tank / Protector',
+                theme: 'A biomechanical guardian wielding radiant hard-light technology to shield allies and disrupt foes.',
+                color: '#FFD700',
+                maxAmmo: 4,
+                abilities: {
+                    LMB: { name: 'Radiant Slam', cooldown: 600, icon: '⚔', damage: 35, description: 'Heavy melee swing that sends out a short golden shockwave.' },
+                    RMB: { name: 'Guard Bash', cooldown: 3000, icon: '⛨', damage: 20, description: 'Short forward bash that pushes enemies back 4m and interrupts channeled abilities.' },
+                    E: { name: 'Ward Projection', cooldown: 12000, icon: '🛡', description: 'Deploys a mobile shield wall that orbits the nearest ally for 5s, blocking projectiles (800 HP).' },
+                    Shift: { name: 'Bulwark Leap', cooldown: 14000, icon: '⬇', damage: 30, description: 'Jumps to a location within 8m, slams down, and taunts enemies in 4m radius for 2s.' },
+                    Ult: { name: 'Sanctuary Dome', icon: '⬭', description: 'Deploys a huge dome (8m radius) that absorbs all incoming ranged attacks for 6s. Allies inside gain 20% damage reduction.' }
+                }
+            },
+            { // Hero 3: Nyx
+                name: 'Nyx',
+                role: 'Flanker / Assassin',
+                theme: 'Silent shadow killer — thrives on precision, stealth, and hit-and-run tactics.',
+                color: '#9D2933',
+                maxAmmo: 6,
+                abilities: {
+                    LMB: { name: 'Silencer Rounds', cooldown: 200, icon: '•', damage: 20, description: '20 dmg per bullet, very low recoil, quiet. Enemies hit are briefly "tagged" with a faint shimmer visible only to Nyx.' },
+                    RMB: { name: 'Shadow Knife', cooldown: 4000, icon: '⚔', damage: 50, description: 'Knife doesn\'t consume ammo. Kill with knife = ammo instantly refilled.' },
+                    E: { name: 'Shadowmeld', cooldown: 8000, icon: '◯', description: 'Does not pause reload — she can reload while invisible.' },
+                    Shift: { name: 'Phase Dash', cooldown: 3000, icon: '↗', description: 'Consumes 1 bullet in addition to cooldown. Dash fails if out of ammo.' },
+                    Ult: { name: 'Death Mark', icon: '✦', description: 'After the blink/execution, Nyx\'s mag is automatically refilled.' }
+                }
+            }
+        ];
+
+        // --- GAME STATE ---
+        let gameState = 'mainMenu';
+        let activeHero = null;
+        let player = {
+            x: WORLD_WIDTH / 2,
+            y: WORLD_HEIGHT / 2,
+            angle: 0,
+            vx: 0,
+            vy: 0,
+            ammo: MAX_AMMO,
+            isReloading: false,
+            reloadStartTime: 0,
+            health: PLAYER_MAX_HEALTH,
+            maxHealth: PLAYER_MAX_HEALTH,
+            ultCharge: 0,
+            isDead: false,
+            deathTime: 0,
+            headshotTracker: 0,
+            isInvisible: false,
+            invisibilityEndTime: 0,
+            team: 'blue',
+            kills: 0,
+            deaths: 0,
+            assists: 0,
+            id: 'player',
+            separationRadius: SEPARATION_RADIUS
+        };
+        let camera = { x: 0, y: 0 };
+        let mouse = { x: 0, y: 0 };
+        let keys = {};
+        let mouseButtons = {};
+        let particles = [];
+        let teammates = [];
+        let enemies = [];
+        let projectiles = [];
+        let activeAbilities = [];
+        let blueSpawnArea = { x: WORLD_WIDTH / 4, y: WORLD_HEIGHT / 2, radius: 150 };
+        let redSpawnArea = { x: WORLD_WIDTH * 3 / 4, y: WORLD_HEIGHT / 2, radius: 150 };
+        let capturePoints = [
+            { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2, radius: CAPTURE_POINT_RADIUS, capturedBy: null, captureProgress: 0 }
+        ];
+        let rHoldProgress = 0;
+        let rHoldStartTime = 0;
+        let rKeyDownTime = 0;
+        let abilityCooldowns = {};
+        let blueScore = 0;
+        let redScore = 0;
+        let gameEnded = false;
+        let spatialHash = {}; // New: spatial hash for performance
+
+        // --- INITIALIZATION ---
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            minimap.width = 200;
+            minimap.height = 200;
+        }
+
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            generateParticles();
+            generateHeroCards();
+            setupEventListeners();
+            showMainMenu();
+        }
+
+        function generateHeroCards() {
+            heroSelectPanel.innerHTML = '';
+
+            // one timeout shared by all cards to prevent flicker
+            let hideTimeout = null;
+            let lastIndex = -1;
+
+            heroes.forEach((hero, i) => {
+                const card = document.createElement('div');
+                card.className = 'hero-card';
+                card.dataset.index = i; // <-- needed for delegation
+                card.style.borderColor = (hero.color || '#444');
+
+                card.innerHTML = `
+                    <div class="hero-icon" style="color:${hero.color || '#fff'};">
+                        ${hero.abilities ? hero.abilities.LMB.icon : i + 1}
+                    </div>
+                    <div class="hero-name" style="color:${hero.color || '#fff'}; text-shadow:0 0 6px ${hero.color || '#fff'};">
+                        ${hero.name}
+                    </div>
+                    <div class="hero-role">${hero.role || "Unknown Role"}</div>
+                `;
+
+                // click to select
+                card.addEventListener('click', () => selectHero(i));
+
+                heroSelectPanel.appendChild(card);
+            });
+
+            // --- Hover delegation: keeps info open while inside the grid ---
+            heroSelectPanel.addEventListener('mousemove', (e) => {
+                const card = e.target.closest('.hero-card');
+                if (!card) return;
+                const idx = +card.dataset.index;
+                if (idx !== lastIndex) {
+                    clearTimeout(hideTimeout);
+                    showHeroInfo(idx);       // updates content but never reflows
+                    lastIndex = idx;
+                }
+            });
+
+            heroSelectPanel.addEventListener('mouseleave', () => {
+                // hide only after leaving the whole grid (prevents mid-row flicker)
+                hideTimeout = setTimeout(() => {
+                    hideHeroInfo();
+                    lastIndex = -1;
+                }, 140);
+            });
+        }
+        
+		function generateTeams() {
+    teammates = [];
+    enemies = [];
+    
+    // Track used heroes to ensure uniqueness
+    const usedHeroIndices = new Set();
+    
+    // Generate AI teammates with unique heroes
+    for (let i = 0; i < TEAM_SIZE - 1; i++) {
+        let heroIndex;
+        do {
+            heroIndex = Math.floor(Math.random() * heroes.length);
+        } while (usedHeroIndices.has(heroIndex));
+        
+        usedHeroIndices.add(heroIndex);
+        const hero = heroes[heroIndex];
+        const teammate = {
+            x: blueSpawnArea.x + (Math.random() - 0.5) * blueSpawnArea.radius,
+            y: blueSpawnArea.y + (Math.random() - 0.5) * blueSpawnArea.radius,
+            angle: 0,
+            vx: 0,
+            vy: 0,
+            ammo: hero.maxAmmo,
+            isReloading: false,
+            reloadStartTime: 0,
+            health: PLAYER_MAX_HEALTH,
+            maxHealth: PLAYER_MAX_HEALTH,
+            ultCharge: 0,
+            isDead: false,
+            deathTime: 0,
+            hero: hero,
+            team: 'blue',
+            kills: 0,
+            deaths: 0,
+            assists: 0,
+            id: `teammate${i}`,
+            aiState: 'idle',
+            aiTarget: null,
+            aiStateTime: 0,
+            abilityCooldowns: {},
+            isInSpawnArea: true,
+            separationRadius: SEPARATION_RADIUS,
+            lastTargetLostTime: 0,
+            preferredAngle: Math.random() * Math.PI * 2
+        };
+        teammates.push(teammate);
+    }
+    
+    // Reset used heroes for enemy team
+    usedHeroIndices.clear();
+    
+    // Generate AI enemies with unique heroes
+    for (let i = 0; i < TEAM_SIZE; i++) {
+        let heroIndex;
+        do {
+            heroIndex = Math.floor(Math.random() * heroes.length);
+        } while (usedHeroIndices.has(heroIndex));
+        
+        usedHeroIndices.add(heroIndex);
+        const hero = heroes[heroIndex];
+        const enemy = {
+            x: redSpawnArea.x + (Math.random() - 0.5) * redSpawnArea.radius,
+            y: redSpawnArea.y + (Math.random() - 0.5) * redSpawnArea.radius,
+            angle: 0,
+            vx: 0,
+            vy: 0,
+            ammo: hero.maxAmmo,
+            isReloading: false,
+            reloadStartTime: 0,
+            health: PLAYER_MAX_HEALTH,
+            maxHealth: PLAYER_MAX_HEALTH,
+            ultCharge: 0,
+            isDead: false,
+            deathTime: 0,
+            hero: hero,
+            team: 'red',
+            kills: 0,
+            deaths: 0,
+            assists: 0,
+            id: `enemy${i}`,
+            aiState: 'idle',
+            aiTarget: null,
+            aiStateTime: 0,
+            abilityCooldowns: {},
+            isInSpawnArea: true,
+            separationRadius: SEPARATION_RADIUS,
+            lastTargetLostTime: 0,
+            preferredAngle: Math.random() * Math.PI * 2
+        };
+        enemies.push(enemy);
+    }
+    
+    updateTeamUI();
+}
+
+        function setupEventListeners() {
+            window.addEventListener('keydown', (e) => {
+                keys[e.key.toLowerCase()] = true;
+                if ((e.key === 'Escape' || e.key.toLowerCase() === 'p') && gameState === 'playing') {
+                    showPauseMenu();
+                } else if ((e.key === 'Escape' || e.key.toLowerCase() === 'p') && gameState === 'paused') {
+                    hidePauseMenu();
+                }
+                if (e.key.toLowerCase() === 'r') {
+                    rKeyDownTime = Date.now();
+                }
+                handleAbilityPress(e.key.toLowerCase());
+            });
+            window.addEventListener('keyup', (e) => {
+                keys[e.key.toLowerCase()] = false;
+                if (e.key.toLowerCase() === 'r') {
+                    const keyPressDuration = Date.now() - rKeyDownTime;
+                    if (keyPressDuration < 200 && gameState === 'playing' && !player.isReloading && player.ammo < (activeHero ? activeHero.maxAmmo : MAX_AMMO)) {
+                        startReload();
+                    }
+                    rHoldProgress = 0;
+                    rHoldStartTime = 0;
+                }
+            });
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+            window.addEventListener('mousedown', (e) => {
+                mouseButtons[e.button] = true;
+                handleAbilityPress(`mouse${e.button}`);
+                e.preventDefault();
+            });
+            window.addEventListener('mouseup', (e) => {
+                mouseButtons[e.button] = false;
+            });
+            window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // Update the startButton event listener to start a new game
+startButton.addEventListener('click', () => {
+    showHeroSelect();
+    // We'll handle the actual game start in selectHero
+});
+            resumeButton.addEventListener('click', hidePauseMenu);
+            mainMenuButton.addEventListener('click', () => {
+                hidePauseMenu();
+                showMainMenu();
+            });
+            pauseMenuEl.addEventListener('click', (e) => {
+                if (e.target === pauseMenuEl) hidePauseMenu();
+            });
+            playAgainButton.addEventListener('click', () => {
+    gameEndScreenEl.style.display = 'none';
+    resetGame();
+    startGame(true); // Explicitly start a new game
+});
+        }
+
+        // --- SPATIAL HASH FOR PERFORMANCE ---
+        function buildSpatialHash(entities) {
+            spatialHash = {};
+            entities.forEach(entity => {
+                const gridX = Math.floor(entity.x / GRID_SIZE);
+                const gridY = Math.floor(entity.y / GRID_SIZE);
+                const key = `${gridX},${gridY}`;
+                
+                if (!spatialHash[key]) {
+                    spatialHash[key] = [];
+                }
+                spatialHash[key].push(entity);
+            });
+        }
+
+        function queryHash(x, y, radius) {
+            const neighbors = [];
+            const minX = Math.floor((x - radius) / GRID_SIZE);
+            const maxX = Math.floor((x + radius) / GRID_SIZE);
+            const minY = Math.floor((y - radius) / GRID_SIZE);
+            const maxY = Math.floor((y + radius) / GRID_SIZE);
+            
+            for (let gx = minX; gx <= maxX; gx++) {
+                for (let gy = minY; gy <= maxY; gy++) {
+                    const key = `${gx},${gy}`;
+                    if (spatialHash[key]) {
+                        spatialHash[key].forEach(entity => {
+                            const dx = entity.x - x;
+                            const dy = entity.y - y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist <= radius) {
+                                neighbors.push(entity);
+                            }
+                        });
+                    }
+                }
+            }
+            
+            return neighbors;
+        }
+
+        function getNeighbors(character) {
+            return queryHash(character.x, character.y, character.separationRadius * 2);
+        }
+
+        function computeSeparationForce(character, neighbors) {
+            let forceX = 0;
+            let forceY = 0;
+            let count = 0;
+            
+            neighbors.forEach(neighbor => {
+                if (neighbor === character) return;
+                
+                const dx = character.x - neighbor.x;
+                const dy = character.y - neighbor.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < character.separationRadius && dist > 0) {
+                    // Normalize and scale by inverse distance
+                    const scale = 1.0 - (dist / character.separationRadius);
+                    forceX += (dx / dist) * scale;
+                    forceY += (dy / dist) * scale;
+                    count++;
+                }
+            });
+            
+            if (count > 0) {
+                forceX /= count;
+                forceY /= count;
+            }
+            
+            return { x: forceX, y: forceY };
+        }
+
+        function steerTo(character, targetX, targetY, weightSeek, weightSeparate) {
+            // Calculate seek force
+            const dx = targetX - character.x;
+            const dy = targetY - character.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            let seekX = 0;
+            let seekY = 0;
+            
+            if (dist > 0) {
+                seekX = (dx / dist) * weightSeek;
+                seekY = (dy / dist) * weightSeek;
+            }
+            
+            // Get neighbors and calculate separation force
+            const neighbors = getNeighbors(character);
+            const separation = computeSeparationForce(character, neighbors);
+            
+            // Combine forces
+            character.vx += seekX + separation.x * weightSeparate;
+            character.vy += seekY + separation.y * weightSeparate;
+            
+            // Clamp max speed
+            const speed = Math.sqrt(character.vx * character.vx + character.vy * character.vy);
+            const maxSpeed = 5;
+            if (speed > maxSpeed) {
+                character.vx = (character.vx / speed) * maxSpeed;
+                character.vy = (character.vy / speed) * maxSpeed;
+            }
+        }
+
+        // --- ABILITY & RELOAD HANDLING ---
+        function handleAbilityPress(key) {
+            if (gameState !== 'playing' || !activeHero || !activeHero.abilities || player.isDead) return;
+            
+            const abilityKeyMap = {
+                'e': 'E',
+                'q': 'Ult',
+                'shift': 'Shift',
+                'mouse0': 'LMB',
+                'mouse2': 'RMB'
+            };
+            
+            const abilityName = abilityKeyMap[key];
+            if (!abilityName || !activeHero.abilities[abilityName]) return;
+
+            if (abilityName === 'LMB') {
+                if (player.ammo <= 0) {
+                    if (!player.isReloading) {
+                        startReload();
+                    }
+                    return;
+                }
+            }
+
+            if (abilityName === 'Ult' && player.ultCharge < ULT_MAX_CHARGE) {
+                return;
+            }
+
+            const ability = activeHero.abilities[abilityName];
+            if (isOnCooldown(abilityName)) return;
+
+            activateAbility(abilityName, player);
+            if (abilityName !== 'Ult') {
+                setCooldown(abilityName, ability.cooldown);
+            } else {
+                player.ultCharge = 0;
+            }
+        }
+
+        function activateAbility(abilityName, character) {
+            const now = Date.now();
+            const hero = character.hero || activeHero;
+            
+            // Check if character has enough ammo for abilities that require it
+            if (abilityName === 'LMB' || abilityName === 'RMB') {
+                if (character.ammo <= 0) {
+                    if (!character.isReloading) {
+                        startReload(character);
+                    }
+                    return;
+                }
+            }
+            
+            switch(abilityName) {
+                case 'LMB':
+                    if (character.ammo > 0) {
+                        character.ammo--;
+                        
+                        if (hero.name === 'Aegis') {
+                            // Aegis's Radiant Slam
+                            const slamRange = 80;
+                            const shockwaveRange = 200;
+                            
+                            activeAbilities.push({
+                                type: 'radiantShockwave',
+                                x: character.x,
+                                y: character.y,
+                                angle: character.angle,
+                                range: shockwaveRange,
+                                damage: hero.abilities.LMB.damage,
+                                lifetime: 300,
+                                owner: character
+                            });
+                            
+                            // Check for hits on enemies
+                            const targets = character.team === 'blue' ? enemies : [...teammates, player];
+                            targets.forEach(target => {
+                                if (target.health <= 0) return;
+                                const dx = target.x - character.x;
+                                const dy = target.y - character.y;
+                                const dist = Math.sqrt(dx*dx + dy*dy);
+                                if (dist < slamRange + target.size) {
+                                    applyDamage(target, hero.abilities.LMB.damage, character);
+                                }
+                            });
+                        } else if (hero.name === 'Nyx') {
+                            // Nyx's silencer rounds
+                            const ability = hero.abilities.LMB;
+                            projectiles.push({
+                                type: 'silencerRound',
+                                x: character.x,
+                                y: character.y,
+                                vx: Math.cos(character.angle) * 18,
+                                vy: Math.sin(character.angle) * 18,
+                                size: 3,
+                                damage: ability.damage,
+                                isSilenced: true,
+                                maxDistance: 600,
+                                traveledDistance: 0,
+                                owner: character
+                            });
+                        } else {
+                            // Other heroes
+                            const ability = hero.abilities.LMB;
+                            projectiles.push({
+                                type: 'gravitonBolt',
+                                x: character.x,
+                                y: character.y,
+                                vx: Math.cos(character.angle) * 12,
+                                vy: Math.sin(character.angle) * 12,
+                                size: 5,
+                                maxDistance: 400,
+                                traveledDistance: 0,
+                                damage: ability.damage,
+                                aoeDamage: ability.aoeDamage,
+                                aoeRadius: 50,
+                                owner: character
+                            });
+                        }
+                    } else {
+                        // If out of ammo, start reload
+                        if (!character.isReloading) {
+                            startReload(character);
+                        }
+                    }
+                    break;
+                case 'RMB':
+                    if (character.ammo > 0) {
+                        character.ammo--;
+                        
+                        if (hero.name === 'Aegis') {
+                            const bashRange = 100;
+                            const pushForce = 15;
+                            
+                            activeAbilities.push({
+                                type: 'guardBash',
+                                x: character.x,
+                                y: character.y,
+                                angle: character.angle,
+                                range: bashRange,
+                                force: pushForce,
+                                damage: hero.abilities.RMB.damage,
+                                lifetime: 200,
+                                owner: character
+                            });
+                        } else if (hero.name === 'Nyx') {
+                            // Nyx's Shadow Knife - doesn't consume ammo
+                            const knifeRange = 80;
+                            let hitEnemy = false;
+                            
+                            const targets = character.team === 'blue' ? enemies : [...teammates, player];
+                            targets.forEach(target => {
+                                if (target.health <= 0) return;
+                                const dx = target.x - character.x;
+                                const dy = target.y - character.y;
+                                const dist = Math.sqrt(dx*dx + dy*dy);
+                                
+                                const angleToTarget = Math.atan2(dy, dx);
+                                let angleDiff = angleToTarget - character.angle;
+                                angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+                                
+                                if (dist < knifeRange && Math.abs(angleDiff) < Math.PI / 4) {
+                                    applyDamage(target, hero.abilities.RMB.damage, character);
+                                    hitEnemy = true;
+                                    
+                                    if (target.health <= 0) {
+                                        // Refill ammo on kill
+                                        character.ammo = hero.maxAmmo;
+                                        character.isReloading = false;
+                                    }
+                                }
+                            });
+                            
+                            // Create knife slash effect
+                            activeAbilities.push({
+                                type: 'shadowKnife',
+                                x: character.x,
+                                y: character.y,
+                                angle: character.angle,
+                                range: knifeRange,
+                                hit: hitEnemy,
+                                lifetime: 150,
+                                owner: character
+                            });
+                        } else {
+                            // Other heroes
+                            activeAbilities.push({
+                                type: 'repulsionWave',
+                                x: character.x,
+                                y: character.y,
+                                angle: character.angle,
+                                radius: 200,
+                                force: 10,
+                                lifetime: 200,
+                                owner: character
+                            });
+                        }
+                    } else {
+                        // If out of ammo, start reload
+                        if (!character.isReloading) {
+                            startReload(character);
+                        }
+                    }
+                    break;
+                case 'E':
+                    if (hero.name === 'Aegis') {
+                        activeAbilities.push({
+                            type: 'wardProjection',
+                            target: character,
+                            radius: 60,
+                            health: 800,
+                            maxHealth: 800,
+                            lifetime: 5000,
+                            startTime: now,
+                            rotation: 0,
+                            orbitRadius: 80,
+                            orbitAngle: 0,
+                            owner: character
+                        });
+                    } else if (hero.name === 'Nyx') {
+                        // Nyx's Shadowmeld - become invisible
+                        character.isInvisible = true;
+                        character.invisibilityEndTime = now + 3000;
+                        
+                        // Create shadow effect
+                        activeAbilities.push({
+                            type: 'shadowmeld',
+                            x: character.x,
+                            y: character.y,
+                            lifetime: 3000,
+                            startTime: now,
+                            owner: character
+                        });
+                    } else {
+                        const tossSpeed = 5;
+                        activeAbilities.push({
+                            type: 'singularityOrb',
+                            x: character.x,
+                            y: character.y,
+                            vx: Math.cos(character.angle) * tossSpeed,
+                            vy: Math.sin(character.angle) * tossSpeed,
+                            pullRadius: 150,
+                            pullForce: 0.5,
+                            lifetime: 8000,
+                            startTime: now,
+                            rotation: 0,
+                            totalLifetime: 8000,
+                            owner: character
+                        });
+                    }
+                    break;
+                    
+                case 'Shift':
+                    if (hero.name === 'Aegis') {
+                        const leapDistance = 200;
+                        const targetX = character.x + Math.cos(character.angle) * leapDistance;
+                        const targetY = character.y + Math.sin(character.angle) * leapDistance;
+                        
+                        activeAbilities.push({
+                            type: 'bulwarkLeap',
+                            startX: character.x,
+                            startY: character.y,
+                            endX: targetX,
+                            endY: targetY,
+                            tauntRadius: 150,
+                            damage: hero.abilities.Shift.damage,
+                            lifetime: 600,
+                            startTime: now,
+                            owner: character
+                        });
+                        
+                        character.x = targetX;
+                        character.y = targetY;
+                    } else if (hero.name === 'Nyx') {
+                        // Nyx's Phase Dash - consumes 1 bullet
+                        if (character.ammo <= 0) return;
+                        
+                        character.ammo--;
+                        
+                        const dashDistance = 150;
+                        const targetX = character.x + Math.cos(character.angle) * dashDistance;
+                        const targetY = character.y + Math.sin(character.angle) * dashDistance;
+                        
+                        // Create dash trail
+                        activeAbilities.push({
+                            type: 'phaseDash',
+                            startX: character.x,
+                            startY: character.y,
+                            endX: targetX,
+                            endY: targetY,
+                            lifetime: 200,
+                            startTime: now,
+                            owner: character
+                        });
+                        
+                        character.x = targetX;
+                        character.y = targetY;
+                    } else {
+                        activeAbilities.push({
+                            type: 'gravityWell',
+                            x: character.x,
+                            y: character.y,
+                            radius: 100,
+                            lifetime: 5000,
+                            startTime: now,
+                            owner: character
+                        });
+                    }
+                    break;
+                    
+                case 'Ult':
+                    if (hero.name === 'Aegis') {
+                        activeAbilities.push({
+                            type: 'sanctuaryDome',
+                            x: character.x,
+                            y: character.y,
+                            radius: 400,
+                            lifetime: 6000,
+                            startTime: now,
+                            rotation: 0,
+                            owner: character
+                        });
+                    } else if (hero.name === 'Nyx') {
+                        // Nyx's Death Mark - blink to target and execute
+                        const markRange = 300;
+                        let targetEnemy = null;
+                        let closestDist = markRange;
+                        
+                        const targets = character.team === 'blue' ? enemies : [...teammates, player];
+                        targets.forEach(target => {
+                            if (target.health <= 0) return;
+                            const dx = target.x - character.x;
+                            const dy = target.y - character.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            
+                            if (dist < closestDist) {
+                                closestDist = dist;
+                                targetEnemy = target;
+                            }
+                        });
+                        
+                        if (targetEnemy) {
+                            // Create death mark effect
+                            activeAbilities.push({
+                                type: 'deathMark',
+                                target: targetEnemy,
+                                startX: character.x,
+                                startY: character.y,
+                                lifetime: 500,
+                                startTime: now,
+                                owner: character
+                            });
+                            
+                            // Teleport and execute
+                            character.x = targetEnemy.x;
+                            character.y = targetEnemy.y;
+                            applyDamage(targetEnemy, 999, character); // Instant kill
+                            
+                            // Refill magazine
+                            character.ammo = hero.maxAmmo;
+                            character.isReloading = false;
+                        }
+                    } else {
+                        activeAbilities.push({
+                            type: 'eventHorizon',
+                            x: character.x,
+                            y: character.y,
+                            radius: 300,
+                            pullForce: 1.5,
+                            lifetime: 5000,
+                            startTime: now,
+                            rotation: 0,
+                            owner: character
+                        });
+                    }
+                    character.ultCharge = 0;
+                    break;
+            }
+        }
+        
+        function startReload(character = player) {
+            if (character.isReloading || !character.hero) return;
+            if (character.ammo === character.hero.maxAmmo) return;
+
+            character.isReloading = true;
+            character.reloadStartTime = Date.now();
+            
+            // Nyx reloads faster (1s vs 2s default)
+            const reloadTime = character.hero.name === 'Nyx' ? 1000 : RELOAD_TIME;
+        }
+
+        function updateReload() {
+            // Update player reload
+            if (player.isReloading) {
+                const reloadTime = activeHero.name === 'Nyx' ? 1000 : RELOAD_TIME;
+                const elapsed = Date.now() - player.reloadStartTime;
+                const progress = Math.min(elapsed / reloadTime, 1);
+
+                const dots = Math.floor(progress * activeHero.maxAmmo);
+                ammoCounterEl.textContent = `Reloading [${'▮'.repeat(dots)}${'▯'.repeat(activeHero.maxAmmo - dots)}]`;
+
+                if (progress >= 1) {
+                    player.ammo = activeHero.maxAmmo;
+                    player.isReloading = false;
+                    updateAmmoUI();
+                }
+            }
+            
+            // Update teammate reloads
+            teammates.forEach(teammate => {
+                if (teammate.isReloading) {
+                    const reloadTime = teammate.hero.name === 'Nyx' ? 1000 : RELOAD_TIME;
+                    const elapsed = Date.now() - teammate.reloadStartTime;
+                    const progress = Math.min(elapsed / reloadTime, 1);
+
+                    if (progress >= 1) {
+                        teammate.ammo = teammate.hero.maxAmmo;
+                        teammate.isReloading = false;
+                    }
+                }
+            });
+            
+            // Update enemy reloads
+            enemies.forEach(enemy => {
+                if (enemy.isReloading) {
+                    const reloadTime = enemy.hero.name === 'Nyx' ? 1000 : RELOAD_TIME;
+                    const elapsed = Date.now() - enemy.reloadStartTime;
+                    const progress = Math.min(elapsed / reloadTime, 1);
+
+                    if (progress >= 1) {
+                        enemy.ammo = enemy.hero.maxAmmo;
+                        enemy.isReloading = false;
+                    }
+                }
+            });
+        }
+     
+        function isOnCooldown(abilityName, character = player) {
+            const cooldowns = character === player ? abilityCooldowns : character.abilityCooldowns;
+            return cooldowns[abilityName] && cooldowns[abilityName] > Date.now();
+        }
+
+        function setCooldown(abilityName, duration, character = player) {
+            const cooldowns = character === player ? abilityCooldowns : character.abilityCooldowns;
+            cooldowns[abilityName] = Date.now() + duration;
+        }
+        
+        function addUltCharge(amount, character = player) {
+            character.ultCharge = Math.min(character.ultCharge + amount, ULT_MAX_CHARGE);
+        }
+
+        // --- AI LOGIC ---
+		function updateAI(character) {
+    if (character.isDead) return;
+    
+    const now = Date.now();
+    const hero = character.hero;
+    
+    // Check if character is in spawn area
+    character.isInSpawnArea = isInSpawnArea(character, 
+        character.team === 'blue' ? blueSpawnArea : redSpawnArea);
+    
+    // Build spatial hash for all units
+    const allUnits = [player, ...teammates, ...enemies].filter(u => !u.isDead);
+    buildSpatialHash(allUnits);
+    
+    // Update AI state with objective focus
+    if (now - character.aiStateTime > 2000 + Math.random() * 1000) { // Add random jitter
+        // Find nearest enemy
+        let nearestEnemy = null;
+        let nearestDist = Infinity;
+        
+        const targets = character.team === 'blue' ? enemies : [...teammates, player];
+        targets.forEach(target => {
+            if (target.health <= 0) return;
+            const dx = target.x - character.x;
+            const dy = target.y - character.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearestEnemy = target;
+            }
+        });
+        
+        // Find team leader to follow
+        let teamLeader = character.team === 'blue' ? player : teammates[0];
+        if (character.team === 'red') {
+            teamLeader = enemies[0];
+        }
+        
+        // Find nearest capture point
+        let nearestPoint = null;
+        let pointDist = Infinity;
+        capturePoints.forEach(point => {
+            const dx = point.x - character.x;
+            const dy = point.y - character.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < pointDist) {
+                pointDist = dist;
+                nearestPoint = point;
+            }
+        });
+        
+        // Decide on AI state with objective focus
+        if (nearestEnemy && nearestDist < 300) {
+            character.aiState = 'combat';
+            character.aiTarget = nearestEnemy;
+            character.lastTargetLostTime = 0;
+        } else if (nearestEnemy && nearestDist < 600) {
+            character.aiState = 'approach';
+            character.aiTarget = nearestEnemy;
+            character.lastTargetLostTime = 0;
+        } else if (nearestPoint && (character.lastTargetLostTime === 0 || now - character.lastTargetLostTime > 3000)) {
+            // Go to capture point if not in combat or haven't seen enemies in 3 seconds
+            character.aiState = 'objective';
+            character.aiTarget = nearestPoint;
+        } else if (teamLeader && character !== teamLeader) {
+            // Follow team leader if not the leader
+            character.aiState = 'follow';
+            character.aiTarget = teamLeader;
+        } else {
+            character.aiState = 'idle';
+            character.aiTarget = null;
+        }
+        
+        character.aiStateTime = now;
+    }
+    
+    // Execute AI behavior based on state
+    switch (character.aiState) {
+        case 'idle':
+            // Wander around with separation
+            if (Math.random() < 0.02) {
+                character.angle = Math.random() * Math.PI * 2;
+            }
+            
+            // Apply steering with separation
+            const targetX = character.x + Math.cos(character.angle) * 100;
+            const targetY = character.y + Math.sin(character.angle) * 100;
+            steerTo(character, targetX, targetY, 0.3, 0.5);
+            break;
+            
+        case 'follow':
+            // Follow team leader with formation
+            if (character.aiTarget) {
+                const dx = character.aiTarget.x - character.x;
+                const dy = character.aiTarget.y - character.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                // Maintain formation with angular offset
+                const followDist = 100;
+                const angleOffset = character.preferredAngle;
+                const targetX = character.aiTarget.x - Math.cos(character.aiTarget.angle + angleOffset) * followDist;
+                const targetY = character.aiTarget.y - Math.sin(character.aiTarget.angle + angleOffset) * followDist;
+                
+                // Apply steering with separation
+                steerTo(character, targetX, targetY, 0.5, 0.5);
+            }
+            break;
+            
+        case 'approach':
+            // Move towards target as a group with separation
+            if (character.aiTarget) {
+                const dx = character.aiTarget.x - character.x;
+                const dy = character.aiTarget.y - character.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                // Apply steering with separation
+                steerTo(character, character.aiTarget.x, character.aiTarget.y, 0.5, 0.5);
+            }
+            break;
+            
+        case 'combat':
+            // Fight target with tactical movement
+            if (character.aiTarget) {
+                const dx = character.aiTarget.x - character.x;
+                const dy = character.aiTarget.y - character.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                // Aim at target
+                character.angle = Math.atan2(dy, dx);
+                
+                // Use abilities with tactical conditions
+                const abilityCheck = Math.random() < 0.05; // Add random jitter to ability usage
+                
+                if (abilityCheck && !isOnCooldown('LMB', character) && character.ammo > 0) {
+                    // Check if facing target and in range
+                    const angleToTarget = Math.atan2(dy, dx);
+                    let angleDiff = angleToTarget - character.angle;
+                    angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+                    
+                    if (Math.abs(angleDiff) < Math.PI / 6 && dist < 400) {
+                        activateAbility('LMB', character);
+                        setCooldown('LMB', hero.abilities.LMB.cooldown, character);
+                    }
+                }
+                
+                if (Math.random() < 0.02 && !isOnCooldown('RMB', character) && character.ammo > 0) {
+                    // Check if facing target and in range
+                    const angleToTarget = Math.atan2(dy, dx);
+                    let angleDiff = angleToTarget - character.angle;
+                    angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+                    
+                    if (Math.abs(angleDiff) < Math.PI / 4 && dist < 200) {
+                        activateAbility('RMB', character);
+                        setCooldown('RMB', hero.abilities.RMB.cooldown, character);
+                    }
+                }
+                
+                if (Math.random() < 0.01 && !isOnCooldown('E', character)) {
+                    activateAbility('E', character);
+                    setCooldown('E', hero.abilities.E.cooldown, character);
+                }
+                
+                if (Math.random() < 0.01 && !isOnCooldown('Shift', character)) {
+                    activateAbility('Shift', character);
+                    setCooldown('Shift', hero.abilities.Shift.cooldown, character);
+                }
+                
+                if (Math.random() < 0.005 && character.ultCharge >= ULT_MAX_CHARGE) {
+                    activateAbility('Ult', character);
+                }
+                
+                // Reload if out of ammo and safe
+                if (character.ammo <= 0 && !character.isReloading && dist > 200) {
+                    startReload(character);
+                }
+                
+                // Move to maintain optimal distance with separation
+                if (dist > 200) {
+                    steerTo(character, character.aiTarget.x, character.aiTarget.y, 0.5, 0.5);
+                } else if (dist < 100) {
+                    // Back off
+                    const retreatX = character.x - dx;
+                    const retreatY = character.y - dy;
+                    steerTo(character, retreatX, retreatY, 0.3, 0.5);
+                } else {
+                    // Strafe around target
+                    const strafeAngle = Math.atan2(dy, dx) + Math.PI / 2;
+                    const strafeX = character.x + Math.cos(strafeAngle) * 50;
+                    const strafeY = character.y + Math.sin(strafeAngle) * 50;
+                    steerTo(character, strafeX, strafeY, 0.3, 0.5);
+                }
+            }
+            break;
+            
+        case 'objective':
+            // Move to capture point with tactical movement
+            if (character.aiTarget) {
+                const dx = character.aiTarget.x - character.x;
+                const dy = character.aiTarget.y - character.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                // Check if point is contested
+                let contested = false;
+                const enemiesInPoint = character.team === 'blue' ? enemies : [...teammates, player];
+                enemiesInPoint.forEach(enemy => {
+                    if (enemy.health <= 0) return;
+                    const edx = enemy.x - character.aiTarget.x;
+                    const edy = enemy.y - character.aiTarget.y;
+                    const edist = Math.sqrt(edx*edx + edy*edy);
+                    if (edist < character.aiTarget.radius) {
+                        contested = true;
+                    }
+                });
+                
+                if (contested) {
+                    // Move around the point in an arc
+                    const arcAngle = Math.atan2(dy, dx) + Math.sin(now / 1000) * Math.PI / 3;
+                    const arcDist = character.aiTarget.radius * 0.8;
+                    const targetX = character.aiTarget.x + Math.cos(arcAngle) * arcDist;
+                    const targetY = character.aiTarget.y + Math.sin(arcAngle) * arcDist;
+                    steerTo(character, targetX, targetY, 0.4, 0.5);
+                    
+                    // Use abilities defensively
+                    if (Math.random() < 0.03 && !isOnCooldown('RMB', character) && character.ammo > 0) {
+                        activateAbility('RMB', character);
+                        setCooldown('RMB', hero.abilities.RMB.cooldown, character);
+                    }
+                } else {
+                    // Move to center of point
+                    steerTo(character, character.aiTarget.x, character.aiTarget.y, 0.5, 0.5);
+                }
+                
+                // Check for enemies and switch to combat if needed
+                const nearbyEnemies = character.team === 'blue' ? enemies : [...teammates, player];
+                nearbyEnemies.forEach(enemy => {
+                    if (enemy.health <= 0) return;
+                    const edx = enemy.x - character.x;
+                    const edy = enemy.y - character.y;
+                    const edist = Math.sqrt(edx*edx + edy*edy);
+                    if (edist < 300) {
+                        character.aiState = 'combat';
+                        character.aiTarget = enemy;
+                        character.aiStateTime = now;
+                    }
+                });
+            }
+            break;
+    }
+    
+    // Track when target is lost
+    if (character.aiState === 'combat' || character.aiState === 'approach') {
+        if (!character.aiTarget || character.aiTarget.health <= 0) {
+            character.lastTargetLostTime = now;
+        }
+    }
+    
+    // Apply physics
+    character.vx *= 0.9;
+    character.vy *= 0.9;
+    
+    const newX = character.x + character.vx;
+    const newY = character.y + character.vy;
+    
+    // Check if character is trying to enter enemy spawn
+    const enemySpawn = character.team === 'blue' ? redSpawnArea : blueSpawnArea;
+    if (!isInSpawnArea({x: newX, y: newY}, enemySpawn)) {
+        character.x = newX;
+        character.y = newY;
+    }
+    
+    // Keep in bounds
+    character.x = Math.max(PLAYER_SIZE, Math.min(WORLD_WIDTH - PLAYER_SIZE, character.x));
+    character.y = Math.max(PLAYER_SIZE, Math.min(WORLD_HEIGHT - PLAYER_SIZE, character.y));
+    
+    // Update invisibility
+    if (character.isInvisible && Date.now() > character.invisibilityEndTime) {
+        character.isInvisible = false;
+    }
+    
+    // Passive ult charge
+    addUltCharge(ULT_PASSIVE_CHARGE_RATE / 60, character);
+}
+
+        // --- UI STATE MANAGEMENT ---
+        function showMainMenu() {
+            gameState = 'mainMenu';
+
+            heroSelectEl.style.display = 'none';
+            pauseMenuEl.style.display = 'none';
+            if (activeHero && activeHero.abilities) {
+                heroUIEl.style.display = 'none';
+                abilityBarEl.style.display = 'none';
+                ammoCounterEl.style.display = 'none';
+                teamUIEl.style.display = 'none';
+                scoreUIEl.style.display = 'none';
+                minimap.style.display = 'none';
+            }
+
+            mainMenuEl.style.display = 'flex';
+            mainMenuEl.style.opacity = '0';
+            mainMenuEl.style.transform = 'scale(0.95)';
+            mainMenuEl.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+
+            requestAnimationFrame(() => {
+                mainMenuEl.style.opacity = '1';
+                mainMenuEl.style.transform = 'scale(1)';
+            });
+
+            resetGame();
+        }
+
+		function showHeroSelect() {
+    gameState = 'heroSelect';
+    mainMenuEl.style.display = 'none';
+    heroSelectEl.style.display = 'flex';
+    pauseMenuEl.style.display = 'none';
+    if (activeHero && activeHero.abilities) {
+        heroUIEl.style.display = 'none';
+        abilityBarEl.style.display = 'none';
+        ammoCounterEl.style.display = 'none';
+        teamUIEl.style.display = 'none';
+        scoreUIEl.style.display = 'none';
+        minimap.style.display = 'none';
+    }
+}
+		
+// --- HERO SELECTION ---
+		function selectHero(index) {
+    activeHero = heroes[index];
+    player.hero = activeHero;
+    player.ammo = activeHero.maxAmmo;
+    player.headshotTracker = 0;
+    
+    // Check if we're starting a new game or changing heroes
+    const isNewGame = gameState === 'heroSelect';
+    
+    // Only reset player position when changing heroes, not the whole team
+    if (!isNewGame && isPlayerInSpawnArea()) {
+        // Just reset the player, not the teams
+        resetPlayer();
+        player.ammo = activeHero.maxAmmo;
+    } else {
+        startGame(isNewGame);
+    }
+}
+		
+		function isInSpawnArea(character, spawnArea) {
+    const dx = character.x - spawnArea.x;
+    const dy = character.y - spawnArea.y;
+    return Math.sqrt(dx * dx + dy * dy) < spawnArea.radius;
+}
+		
+		function startGame(isNewGame = true) {
+    gameState = 'playing';
+    mainMenuEl.style.display = 'none';
+    heroSelectEl.style.display = 'none';
+    pauseMenuEl.style.display = 'none';
+    gameEndScreenEl.style.display = 'none';
+    gameEnded = false;
+
+    if (activeHero && activeHero.abilities) {
+        heroUIEl.style.display = 'block';
+        abilityBarEl.style.display = 'flex';
+        ammoCounterEl.style.display = 'block';
+        teamUIEl.style.display = 'block';
+        scoreUIEl.style.display = 'block';
+        minimap.style.display = 'block';
+        updateHeroUI();
+    }
+
+    // Only reset player when changing heroes, not the whole team
+    resetPlayer();
+    player.ammo = activeHero.maxAmmo;
+    
+    // Only generate new teams when starting a new game
+    if (isNewGame) {
+        generateTeams();
+        blueScore = 0;
+        redScore = 0;
+        updateScoreUI();
+        
+        // Reset capture points
+        capturePoints.forEach(point => {
+            point.capturedBy = null;
+            point.captureProgress = 0;
+        });
+    }
+}
+
+        function showPauseMenu() {
+            gameState = 'paused';
+            pauseMenuEl.style.display = 'flex';
+        }
+
+        function hidePauseMenu() {
+            gameState = 'playing';
+            pauseMenuEl.style.display = 'none';
+        }
+
+        function showHeroInfo(index) {
+            const hero = heroes[index];
+            if (!hero) return;
+
+            let abilitiesHTML = '';
+            for (const key in hero.abilities || {}) {
+                const ability = hero.abilities[key];
+                const keybind = key === 'Ult' ? 'Q' : key;
+                const cooldownText = ability.cooldown
+                    ? `<span class="cooldown">Cooldown: ${ability.cooldown / 1000}s</span>`
+                    : `<span class="cooldown">Ult</span>`;
+                abilitiesHTML += `
+                    <li>
+                        <span class="ability-name">${ability.icon} ${ability.name}</span> - ${cooldownText}
+                        <span class="keybind">[${keybind}]</span>
+                        <p>${ability.description || ''}</p>
+                    </li>`;
+            }
+
+            heroInfoPanelEl.innerHTML = `
+                <h2>${hero.name}</h2>
+                <p><strong>Role:</strong> ${hero.role || '—'}</p>
+                <p><strong>Theme:</strong> ${hero.theme || '—'}</p>
+                <h3>Abilities:</h3>
+                <ul>${abilitiesHTML}</ul>
+            `;
+
+            // keep it always block to avoid layout shifts; fade with opacity
+            heroInfoPanelEl.style.display = 'block';
+            heroInfoPanelEl.style.transition = 'opacity 120ms ease';
+            heroInfoPanelEl.style.opacity = '1';
+            heroInfoPanelEl.style.visibility = 'visible';
+            heroInfoPanelEl.style.pointerEvents = 'auto';
+        }
+        
+        function hideHeroInfo() {
+            heroInfoPanelEl.style.display = 'none';
+        }
+
+        function updateHeroUI() {
+            if (!activeHero || !activeHero.abilities) return;
+
+            heroNameDisplayEl.textContent = activeHero.name.toUpperCase();
+            heroNameDisplayEl.style.color = activeHero.color;
+            heroNameDisplayEl.style.textShadow = `0 0 8px ${activeHero.color}, 0 0 15px rgba(0,0,0,0.7)`;
+
+            heroUIEl.style.borderColor = activeHero.color;
+            heroUIEl.style.boxShadow = `0 0 15px ${activeHero.color}, inset 0 0 8px rgba(255,255,255,0.2)`;
+
+            for (const key in activeHero.abilities) {
+                const ability = activeHero.abilities[key];
+                const slotEl = document.getElementById(`ability-${key === 'Ult' ? 'Ult' : key}`);
+                if (!slotEl) continue;
+
+                const iconEl = slotEl.querySelector('span');
+                if (iconEl) {
+                    iconEl.textContent = ability.icon;
+                    iconEl.style.color = activeHero.color;
+                }
+
+                slotEl.title = `${ability.name}\n${ability.description || ""}`;
+
+                if (key === "Ult") {
+                    slotEl.style.borderColor = "gold";
+                    slotEl.style.boxShadow = "0 0 20px gold";
+                } else {
+                    slotEl.style.borderColor = activeHero.color;
+                    slotEl.style.boxShadow = `0 0 8px ${activeHero.color}`;
+                }
+            }
+
+            updateAmmoUI();
+        }
+       
+        function updateAmmoUI() {
+            // Show ammo counter for all heroes now
+            ammoCounterEl.style.display = 'block';
+
+            if (player.isReloading) {
+                ammoCounterEl.textContent = 'Reloading...';
+            } else {
+                // Display ammo for all heroes including Aegis
+                ammoCounterEl.textContent = `${player.ammo} / ${activeHero.maxAmmo}`;
+            }
+        }
+        
+        function updateTeamUI() {
+            // Update team members
+            const teamMembersEl = document.getElementById('teamMembers');
+            teamMembersEl.innerHTML = '';
+            
+            // Add player
+            const playerMember = document.createElement('div');
+            playerMember.className = 'team-member';
+            playerMember.innerHTML = `
+                <div class="team-member-icon" style="background-color: ${activeHero.color};">
+                    ${activeHero.abilities.LMB.icon}
+                </div>
+                <div class="team-member-info">
+                    <div class="team-member-name">You (${activeHero.name})</div>
+                    <div class="team-member-health">
+                        <div class="team-member-health-fill" style="width: ${(player.health / player.maxHealth) * 100}%"></div>
+                    </div>
+                </div>
+            `;
+            teamMembersEl.appendChild(playerMember);
+            
+            // Add teammates
+            teammates.forEach(teammate => {
+                const teammateMember = document.createElement('div');
+                teammateMember.className = 'team-member';
+                teammateMember.innerHTML = `
+                    <div class="team-member-icon" style="background-color: ${teammate.hero.color};">
+                        ${teammate.hero.abilities.LMB.icon}
+                    </div>
+                    <div class="team-member-info">
+                        <div class="team-member-name">${teammate.hero.name} ${teammate.isDead ? '(Dead)' : ''}</div>
+                        <div class="team-member-health">
+                            <div class="team-member-health-fill" style="width: ${(teammate.health / teammate.maxHealth) * 100}%"></div>
+                        </div>
+                    </div>
+                `;
+                teamMembersEl.appendChild(teammateMember);
+            });
+            
+            // Update enemy members
+            const enemyMembersEl = document.getElementById('enemyMembers');
+            enemyMembersEl.innerHTML = '';
+            
+            enemies.forEach(enemy => {
+                const enemyMember = document.createElement('div');
+                enemyMember.className = 'enemy-member';
+                enemyMember.innerHTML = `
+                    <div class="enemy-member-icon" style="background-color: ${enemy.hero.color};">
+                        ${enemy.hero.abilities.LMB.icon}
+                    </div>
+                    <div class="enemy-member-info">
+                        <div class="enemy-member-name">${enemy.hero.name} ${enemy.isDead ? '(Dead)' : ''}</div>
+                        <div class="enemy-member-health">
+                            <div class="enemy-member-health-fill" style="width: ${(enemy.health / enemy.maxHealth) * 100}%"></div>
+                        </div>
+                    </div>
+                `;
+                enemyMembersEl.appendChild(enemyMember);
+            });
+        }
+        
+        function updateScoreUI() {
+            // Update capture progress instead of score
+            if (capturePoints.length > 0) {
+                const point = capturePoints[0];
+                if (point.capturedBy === 'blue') {
+                    blueScoreEl.textContent = `${Math.round(point.captureProgress)}%`;
+                    redScoreEl.textContent = '0%';
+                } else if (point.capturedBy === 'red') {
+                    blueScoreEl.textContent = '0%';
+                    redScoreEl.textContent = `${Math.round(-point.captureProgress)}%`;
+                } else {
+                    blueScoreEl.textContent = '0%';
+                    redScoreEl.textContent = '0%';
+                }
+            }
+        }
+        
+        function showGameEndScreen(victory) {
+            gameEnded = true;
+            gameState = 'gameEnd';
+            
+            gameEndScreenEl.style.display = 'flex';
+            gameEndTitleEl.textContent = victory ? 'VICTORY' : 'DEFEAT';
+            gameEndTitleEl.className = victory ? 'game-end-title victory-title' : 'game-end-title defeat-title';
+            
+            playerKillsEl.textContent = player.kills;
+            playerDeathsEl.textContent = player.deaths;
+            playerAssistsEl.textContent = player.assists;
+        }
+        
+        function resetPlayer() {
+            player.x = blueSpawnArea.x;
+            player.y = blueSpawnArea.y;
+            player.vx = 0;
+            player.vy = 0;
+            player.angle = 0;
+            player.ammo = activeHero ? activeHero.maxAmmo : 0;
+            player.isReloading = false;
+            player.health = PLAYER_MAX_HEALTH;
+            player.ultCharge = 0;
+            player.isDead = false;
+            player.headshotTracker = 0;
+            player.isInvisible = false;
+            player.kills = 0;
+            player.deaths = 0;
+            player.assists = 0;
+            camera.x = 0;
+            camera.y = 0;
+            rHoldProgress = 0;
+            projectiles = [];
+            activeAbilities = [];
+            abilityCooldowns = {};
+        }
+        
+        function resetGame() {
+            resetPlayer();
+            blueScore = 0;
+            redScore = 0;
+            gameEnded = false;
+            
+            // Reset capture points
+            capturePoints.forEach(point => {
+                point.capturedBy = null;
+                point.captureProgress = 0;
+            });
+        }
+        
+        function isPlayerInSpawnArea() {
+            const dx = player.x - blueSpawnArea.x;
+            const dy = player.y - blueSpawnArea.y;
+            return Math.sqrt(dx * dx + dy * dy) < blueSpawnArea.radius;
+        }
+
+        // --- GENERATION ---
+        function generateParticles() {
+            particles = [];
+            for (let i = 0; i < NUM_PARTICLES; i++) {
+                particles.push({
+                    x: Math.random() * WORLD_WIDTH,
+                    y: Math.random() * WORLD_HEIGHT,
+                    size: Math.random() * 3 + 1,
+                    speedX: (Math.random() - 0.5) * 0.5,
+                    speedY: (Math.random() - 0.5) * 0.5,
+                    opacity: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+
+        // --- UPDATE LOGIC ---
+		function updatePlayer() {
+    if (gameState !== 'playing' || player.isDead) return;
+
+    let dx = 0, dy = 0;
+    if (keys['w']) dy -= 1;
+    if (keys['s']) dy += 1;
+    if (keys['a']) dx -= 1;
+    if (keys['d']) dx += 1;
+
+    if (dx !== 0 || dy !== 0) {
+        const len = Math.sqrt(dx * dx + dy * dy);
+        dx /= len;
+        dy /= len;
+    }
+
+    const accel = 0.6;
+    const friction = 0.85;
+    const maxSpeed = 6;
+
+    player.vx += dx * accel;
+    player.vy += dy * accel;
+
+    player.vx *= friction;
+    player.vy *= friction;
+
+    const speed = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+    if (speed > maxSpeed) {
+        player.vx = (player.vx / speed) * maxSpeed;
+        player.vy = (player.vy / speed) * maxSpeed;
+    }
+
+    const newX = player.x + player.vx;
+    const newY = player.y + player.vy;
+    
+    // Check if player is trying to enter enemy spawn
+    if (!isInSpawnArea({x: newX, y: newY}, redSpawnArea)) {
+        player.x = newX;
+        player.y = newY;
+    }
+    
+    // Check if player is in their own spawn (for invincibility)
+    player.isInSpawnArea = isInSpawnArea(player, blueSpawnArea);
+
+    player.x = Math.max(PLAYER_SIZE, Math.min(WORLD_WIDTH - PLAYER_SIZE, player.x));
+    player.y = Math.max(PLAYER_SIZE, Math.min(WORLD_HEIGHT - PLAYER_SIZE, player.y));
+    
+    const worldMouseX = mouse.x + camera.x;
+    const worldMouseY = mouse.y + camera.y;
+    player.angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+    
+    // Update invisibility
+    if (player.isInvisible && Date.now() > player.invisibilityEndTime) {
+        player.isInvisible = false;
+    }
+    
+    // Passive ult charge
+    addUltCharge(ULT_PASSIVE_CHARGE_RATE / 60);
+}
+       
+        function updateReselect() {
+            if (gameState !== 'playing') return;
+            
+            if (keys['r'] && isPlayerInSpawnArea()) {
+                if (rHoldStartTime === 0) {
+                    rHoldStartTime = Date.now();
+                }
+                rHoldProgress = Math.min(1, (Date.now() - rHoldStartTime) / RESELECT_HOLD_TIME);
+                if (rHoldProgress >= 1) {
+                    showHeroSelect();
+                    rHoldProgress = 0;
+                    rHoldStartTime = 0;
+                }
+            } else {
+                rHoldProgress = 0;
+                rHoldStartTime = 0;
+            }
+        }
+
+        function updateCamera() {
+            if (gameState !== 'playing') return;
+            const targetX = player.x - canvas.width / 2;
+            const targetY = player.y - canvas.height / 2;
+            camera.x += (targetX - camera.x) * 0.1;
+            camera.y += (targetY - camera.y) * 0.1;
+        }
+
+        function updateParticles() {
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                if (p.x < 0) p.x = WORLD_WIDTH;
+                if (p.x > WORLD_WIDTH) p.x = 0;
+                if (p.y < 0) p.y = WORLD_HEIGHT;
+                if (p.y > WORLD_HEIGHT) p.y = 0;
+            });
+        }
+
+        function updateProjectiles() {
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const p = projectiles[i];
+
+                p.x += p.vx;
+                p.y += p.vy;
+                p.traveledDistance += Math.hypot(p.vx, p.vy);
+
+                const outOfRange =
+                    p.traveledDistance >= (p.maxDistance || 500) ||
+                    p.x < 0 || p.x > WORLD_WIDTH ||
+                    p.y < 0 || p.y > WORLD_HEIGHT;
+
+                if (outOfRange) {
+                    if (p.type === 'gravitonBolt') {
+                        activeAbilities.push({
+                            type: 'explosion',
+                            x: p.x,
+                            y: p.y,
+                            radius: p.aoeRadius,
+                            damage: p.aoeDamage,
+                            lifetime: 200,
+                            owner: p.owner
+                        });
+                    }
+                    projectiles.splice(i, 1);
+                    continue;
+                }
+
+                // Check collision with all characters
+                const allTargets = [...enemies, ...teammates, player];
+                for (let target of allTargets) {
+                    if (target.health <= 0 || target === p.owner) continue;
+                    
+                    const dx = target.x - p.x;
+                    const dy = target.y - p.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < target.size / 2 + p.size) {
+                        applyDamage(target, p.damage, p.owner);
+                        
+                        // Nyx's headshot tracker
+                        if (p.type === 'silencerRound' && p.owner.hero.name === 'Nyx') {
+                            p.owner.headshotTracker++;
+                            if (p.owner.headshotTracker >= 3) {
+                                p.owner.ammo++;
+                                p.owner.headshotTracker = 0;
+                            }
+                        }
+
+                        if (p.type === 'gravitonBolt') {
+                            activeAbilities.push({
+                                type: 'explosion',
+                                x: p.x,
+                                y: p.y,
+                                radius: p.aoeRadius,
+                                damage: p.aoeDamage,
+                                lifetime: 200,
+                                owner: p.owner
+                            });
+                        }
+
+                        projectiles.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        }
+
+		function applyDamage(target, damage, source) {
+    if (!target || target.health <= 0) return;
+    
+    // Check for friendly fire (disable for now)
+    if (source && target.team === source.team) {
+        return;
+    }
+    
+    // Check if target is in spawn area (invincibility)
+    if (target.isInSpawnArea) {
+        return;
+    }
+    
+    // Apply damage reduction if target is in sanctuary dome
+    if (target.damageReduction) {
+        damage *= (1 - target.damageReduction);
+    }
+    
+    target.health -= damage;
+    
+    // Give ult charge to source
+    if (source) {
+        addUltCharge(damage * ULT_DAMAGE_CHARGE_FACTOR, source);
+    }
+    
+    if (target.health <= 0) {
+        target.health = 0;
+        
+        // Update stats
+        if (source) {
+            if (source === player) {
+                player.kills++;
+            } else if (source.team === 'blue') {
+                // Find which teammate
+                const teammate = teammates.find(t => t.id === source.id);
+                if (teammate) teammate.kills++;
+            } else {
+                // Enemy got a kill
+                const enemy = enemies.find(e => e.id === source.id);
+                if (enemy) enemy.kills++;
+            }
+            
+            // Check for assists
+            const allPlayers = [...teammates, player];
+            allPlayers.forEach(p => {
+                if (p !== source && p.team === source.team) {
+                    // Simple assist logic - if within range of the kill
+                    const dx = p.x - target.x;
+                    const dy = p.y - target.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 300) {
+                        if (p === player) {
+                            player.assists++;
+                        } else {
+                            const teammate = teammates.find(t => t.id === p.id);
+                            if (teammate) teammate.assists++;
+                        }
+                    }
+                }
+            });
+        }
+        
+        if (target === player) {
+            handlePlayerDeath();
+        } else {
+            target.deathTime = Date.now();
+            target.isDead = true;
+        }
+    }
+}
+
+        function handlePlayerDeath() {
+            player.isDead = true;
+            player.deathTime = Date.now();
+            player.deaths++;
+        }
+
+        function respawnCharacter(character) {
+            const spawnArea = character.team === 'blue' ? blueSpawnArea : redSpawnArea;
+            
+            character.x = spawnArea.x + (Math.random() - 0.5) * spawnArea.radius;
+            character.y = spawnArea.y + (Math.random() - 0.5) * spawnArea.radius;
+            character.vx = 0;
+            character.vy = 0;
+            character.health = character.maxHealth;
+            character.isDead = false;
+            character.ammo = character.hero.maxAmmo;
+            character.isReloading = false;
+            character.ultCharge = 0;
+        }
+
+// --- UPDATED ABILITY EFFECTS (FLUX PULLS ONLY AFFECT ENEMIES) ---
+		function updateActiveAbilities() {
+    const now = Date.now();
+    for (let i = activeAbilities.length - 1; i >= 0; i--) {
+        const a = activeAbilities[i];
+        a.lifetime -= 16;
+
+        if (a.lifetime <= 0) {
+            activeAbilities.splice(i, 1);
+            continue;
+        }
+
+        if (a.type === 'explosion') {
+            // Only damage enemies
+            const targets = a.owner.team === 'blue' ? enemies : [...teammates, player];
+            targets.forEach(target => {
+                if (target.health <= 0) return;
+                const dx = target.x - a.x;
+                const dy = target.y - a.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < a.radius) {
+                    applyDamage(target, a.damage, a.owner);
+                }
+            });
+        } else if (a.type === 'singularityOrb') {
+            const lifeProgress = a.lifetime / a.totalLifetime;
+            if (now - a.startTime > 1000) {
+                a.x += a.vx * 0.1; a.vx *= 0.9;
+                a.y += a.vy * 0.1; a.vy *= 0.9;
+                
+                // ONLY pull enemies (not teammates)
+                const targets = a.owner.team === 'blue' ? enemies : [...teammates, player];
+                targets.forEach(target => {
+                    if (target.health <= 0) return;
+                    const dx = a.x - target.x;
+                    const dy = a.y - target.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < a.pullRadius && dist > 0) {
+                        const force = (a.pullForce * lifeProgress) / dist;
+                        target.vx += dx * force;
+                        target.vy += dy * force;
+                    }
+                });
+            } else {
+                a.x += a.vx;
+                a.y += a.vy;
+            }
+            a.rotation += 0.05;
+        } else if (a.type === 'repulsionWave') {
+            a.x = a.owner.x;
+            a.y = a.owner.y;
+            a.angle = a.owner.angle;
+            
+            // Push ALL characters (including teammates) - this is a knockback, not a pull
+            const allTargets = [...enemies, ...teammates, player];
+            allTargets.forEach(target => {
+                if (target.health <= 0 || target === a.owner) return;
+                const dx = target.x - a.x;
+                const dy = target.y - a.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                let angleDiff = Math.atan2(dy, dx) - a.angle;
+                angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+                if (dist < a.radius && Math.abs(angleDiff) < Math.PI / 4) {
+                    const force = a.force / Math.max(1, dist / 10);
+                    target.vx += (dx / dist) * force;
+                    target.vy += (dy / dist) * force;
+                    
+                    // Only damage enemies
+                    if (target.team !== a.owner.team) {
+                        applyDamage(target, 10, a.owner);
+                    }
+                }
+            });
+        } else if (a.type === 'gravityWell') {
+            a.x = a.owner.x;
+            a.y = a.owner.y;
+            const fadeStart = 1000;
+            const fadeProgress = Math.max(0, Math.min(1, (fadeStart - a.lifetime) / fadeStart));
+            a.fadeProgress = fadeProgress;
+            const effectiveForce = fadeProgress > 0 ? (1 - fadeProgress) : 1;
+            
+            // ONLY slow enemies (not teammates)
+            const targets = a.owner.team === 'blue' ? enemies : [...teammates, player];
+            targets.forEach(target => {
+                if (target.health <= 0) return;
+                const dx = target.x - a.x;
+                const dy = target.y - a.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < a.radius) {
+                    target.vx *= 0.9 * effectiveForce;
+                    target.vy *= 0.9 * effectiveForce;
+                }
+            });
+        } else if (a.type === 'eventHorizon') {
+            const fadeStart = 1000;
+            const fadeProgress = Math.max(0, Math.min(1, (fadeStart - a.lifetime) / fadeStart));
+            a.fadeProgress = fadeProgress;
+            const effectiveForce = fadeProgress > 0 ? (1 - fadeProgress) : 1;
+            
+            // ONLY pull enemies (not teammates)
+            const targets = a.owner.team === 'blue' ? enemies : [...teammates, player];
+            targets.forEach(target => {
+                if (target.health <= 0) return;
+                const dx = a.x - target.x;
+                const dy = a.y - target.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < a.radius && dist > 0) {
+                    const force = (a.pullForce * effectiveForce) / dist;
+                    target.vx += dx * force;
+                    target.vy += dy * force;
+                }
+            });
+            
+            // Destroy projectiles
+            for(let j = projectiles.length - 1; j >= 0; j--) {
+                const p = projectiles[j];
+                const dist = Math.sqrt((p.x - a.x)**2 + (p.y - a.y)**2);
+                if (dist < a.radius) {
+                    projectiles.splice(j, 1);
+                }
+            }
+            a.rotation += 0.02;
+        } else if (a.type === 'radiantShockwave') {
+            const opacity = a.lifetime / 300;
+            const gradient = ctx.createLinearGradient(
+                a.x, a.y,
+                a.x + Math.cos(a.angle) * a.range,
+                a.y + Math.sin(a.angle) * a.range
+            );
+            gradient.addColorStop(0, `rgba(255, 215, 0, ${opacity})`);
+            gradient.addColorStop(1, `rgba(255, 215, 0, 0)`);
+            
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(a.x + Math.cos(a.angle) * a.range, a.y + Math.sin(a.angle) * a.range);
+            ctx.stroke();
+            
+            ctx.strokeStyle = `rgba(255, 215, 0, ${opacity * 0.5})`;
+            ctx.lineWidth = 2;
+            const rippleRadius = (1 - opacity) * a.range;
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, rippleRadius, 0, Math.PI * 2);
+            ctx.stroke();
+        } else if (a.type === 'guardBash') {
+            const opacity = a.lifetime / 200;
+            ctx.fillStyle = `rgba(255, 215, 0, ${opacity * 0.3})`;
+            ctx.strokeStyle = `rgba(255, 215, 0, ${opacity})`;
+            ctx.lineWidth = 3;
+            
+            const width = a.range;
+            const height = a.range / 2;
+            ctx.save();
+            ctx.translate(a.x, a.y);
+            ctx.rotate(a.angle);
+            ctx.fillRect(0, -height/2, width, height);
+            ctx.strokeRect(0, -height/2, width, height);
+            ctx.restore();
+        } else if (a.type === 'wardProjection') {
+            const opacity = 0.8;
+            ctx.save();
+            ctx.translate(a.x, a.y);
+            ctx.rotate(a.rotation);
+            
+            ctx.fillStyle = `rgba(255, 215, 0, ${opacity * 0.2})`;
+            ctx.strokeStyle = `rgba(255, 215, 0, ${opacity})`;
+            ctx.lineWidth = 2;
+            
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i;
+                const x = Math.cos(angle) * a.radius;
+                const y = Math.sin(angle) * a.radius;
+                
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                
+                ctx.save();
+                ctx.translate(x, y);
+                drawHexagon(0, 0, 10);
+                ctx.stroke();
+                ctx.restore();
+            }
+            
+            drawHexagon(0, 0, a.radius * 0.5);
+            ctx.fill();
+            ctx.stroke();
+            
+            const healthPercent = a.health / a.maxHealth;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(-a.radius, -a.radius - 15, a.radius * 2, 5);
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+            ctx.fillRect(-a.radius, -a.radius - 15, a.radius * 2 * healthPercent, 5);
+            
+            ctx.restore();
+        } else if (a.type === 'bulwarkLeap') {
+            const progress = 1 - (a.lifetime / 600);
+            if (progress < 0.5) {
+                const trailProgress = progress * 2;
+                const gradient = ctx.createLinearGradient(
+                    a.startX, a.startY,
+                    a.endX, a.endY
+                );
+                gradient.addColorStop(0, `rgba(255, 215, 0, ${1 - trailProgress})`);
+                gradient.addColorStop(trailProgress, `rgba(255, 215, 0, ${1 - trailProgress})`);
+                gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(a.startX, a.startY);
+                ctx.lineTo(a.endX, a.endY);
+                ctx.stroke();
+            } else {
+                const impactProgress = (progress - 0.5) * 2;
+                const radius = impactProgress * a.tauntRadius;
+                
+                ctx.strokeStyle = `rgba(255, 215, 0, ${1 - impactProgress})`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(a.endX, a.endY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        } else if (a.type === 'sanctuaryDome') {
+            const opacity = 0.8;
+            const gradient = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, a.radius);
+            gradient.addColorStop(0, `rgba(255, 215, 0, ${opacity * 0.1})`);
+            gradient.addColorStop(0.7, `rgba(255, 215, 0, ${opacity * 0.05})`);
+            gradient.addColorStop(1, `rgba(255, 215, 0, 0)`);
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.save();
+            ctx.translate(a.x, a.y);
+            ctx.rotate(a.rotation);
+            
+            const hexSize = 30;
+            const hexHeight = hexSize * 2;
+            const hexWidth = Math.sqrt(3) * hexSize;
+            const vertDist = hexHeight * 3 / 4;
+            
+            ctx.strokeStyle = `rgba(255, 215, 0, ${opacity * 0.3})`;
+            ctx.lineWidth = 1;
+            
+            for (let y = -a.radius; y < a.radius; y += vertDist) {
+                for (let x = -a.radius; x < a.radius; x += hexWidth) {
+                    const offsetX = (y / vertDist) % 2 === 1 ? hexWidth / 2 : 0;
+                    const dist = Math.sqrt((x + offsetX) * (x + offsetX) + y * y);
+                    
+                    if (dist < a.radius - hexSize) {
+                        const hexOpacity = opacity * 0.3 * (0.5 + 0.5 * Math.sin(Date.now() / 500 + x / 50 + y / 50));
+                        ctx.strokeStyle = `rgba(255, 215, 0, ${hexOpacity})`;
+                        drawHexagon(x + offsetX, y, hexSize);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            ctx.restore();
+            
+            ctx.strokeStyle = `rgba(255, 215, 0, ${opacity})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+            ctx.stroke();
+        } else if (a.type === 'shieldSparks') {
+            const opacity = a.lifetime / 100;
+            for (let i = 0; i < 5; i++) {
+                const angle = (Math.PI * 2 / 5) * i + Date.now() / 100;
+                const dist = 10 * (1 - opacity);
+                const x = a.x + Math.cos(angle) * dist;
+                const y = a.y + Math.sin(angle) * dist;
+                
+                ctx.fillStyle = `rgba(255, 215, 0, ${opacity})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else if (a.type === 'shadowKnife') {
+            const opacity = a.lifetime / 150;
+            ctx.save();
+            ctx.translate(a.x, a.y);
+            ctx.rotate(a.angle);
+            
+            // Draw knife slash
+            ctx.strokeStyle = `rgba(157, 41, 51, ${opacity})`;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, -a.range/2);
+            ctx.lineTo(a.range, 0);
+            ctx.lineTo(0, a.range/2);
+            ctx.stroke();
+            
+            // Draw hit effect
+            if (a.hit) {
+                ctx.fillStyle = `rgba(255, 0, 0, ${opacity * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(a.range, 0, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        } else if (a.type === 'shadowmeld') {
+            const opacity = a.lifetime / 3000;
+            ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, 50, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = `rgba(157, 41, 51, ${opacity * 0.3})`;
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.arc(a.x, a.y, 20 + i * 15, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        } else if (a.type === 'phaseDash') {
+            const opacity = a.lifetime / 200;
+            const gradient = ctx.createLinearGradient(a.startX, a.startY, a.endX, a.endY);
+            gradient.addColorStop(0, `rgba(157, 41, 51, ${opacity})`);
+            gradient.addColorStop(1, `rgba(157, 41, 51, 0)`);
+            
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(a.startX, a.startY);
+            ctx.lineTo(a.endX, a.endY);
+            ctx.stroke();
+            
+            // Draw shadow copies
+            for (let i = 0; i < 3; i++) {
+                const t = (i + 1) / 4;
+                const x = a.startX + (a.endX - a.startX) * t;
+                const y = a.startY + (a.endY - a.startY) * t;
+                
+                ctx.fillStyle = `rgba(157, 41, 51, ${opacity * (1 - t)})`;
+                ctx.beginPath();
+                ctx.arc(x, y, PLAYER_SIZE * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else if (a.type === 'deathMark') {
+            const opacity = a.lifetime / 500;
+            
+            // Draw death mark on target
+            ctx.strokeStyle = `rgba(157, 41, 51, ${opacity})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(a.target.x - 20, a.target.y - 20);
+            ctx.lineTo(a.target.x + 20, a.target.y + 20);
+            ctx.moveTo(a.target.x + 20, a.target.y - 20);
+            ctx.lineTo(a.target.x - 20, a.target.y + 20);
+            ctx.stroke();
+            
+            // Draw execution effect
+            ctx.fillStyle = `rgba(255, 0, 0, ${opacity * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(a.target.x, a.target.y, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw teleport trail
+            const gradient = ctx.createLinearGradient(a.startX, a.startY, a.target.x, a.target.y);
+            gradient.addColorStop(0, `rgba(157, 41, 51, ${opacity})`);
+            gradient.addColorStop(1, `rgba(157, 41, 51, 0)`);
+            
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(a.startX, a.startY);
+            ctx.lineTo(a.target.x, a.target.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    }
+    
+    // Reset taunted status
+    [...enemies, ...teammates, player].forEach(char => {
+        char.taunted = false;
+    });
+}        
+        
+		function updateCapturePoints() {
+            if (gameState !== 'playing' || gameEnded) return;
+            
+            capturePoints.forEach(point => {
+                let blueInfluence = 0;
+                let redInfluence = 0;
+                
+                // Check which team members are in the capture point
+                [...teammates, player].forEach(char => {
+                    if (char.health <= 0) return;
+                    const dx = char.x - point.x;
+                    const dy = char.y - point.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < point.radius) {
+                        blueInfluence += 1;
+                    }
+                });
+                
+                enemies.forEach(enemy => {
+                    if (enemy.health <= 0) return;
+                    const dx = enemy.x - point.x;
+                    const dy = enemy.y - point.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < point.radius) {
+                        redInfluence += 1;
+                    }
+                });
+                
+                // Update capture progress with proper decay and contested logic
+                if (blueInfluence > 0 && redInfluence === 0) {
+                    // Blue team uncontested
+                    if (point.capturedBy === 'red') {
+                        // Decay red progress first
+                        point.captureProgress += CAPTURE_RATE * blueInfluence;
+                        if (point.captureProgress >= 0) {
+                            point.captureProgress = 0;
+                            point.capturedBy = null;
+                        }
+                    } else {
+                        // Build blue progress
+                        point.captureProgress += CAPTURE_RATE * blueInfluence;
+                        if (point.captureProgress >= MAX_CAPTURE_PROGRESS) {
+                            point.captureProgress = MAX_CAPTURE_PROGRESS;
+                            point.capturedBy = 'blue';
+                            // Victory for blue team
+                            showGameEndScreen(true);
+                        }
+                    }
+                } else if (redInfluence > 0 && blueInfluence === 0) {
+                    // Red team uncontested
+                    if (point.capturedBy === 'blue') {
+                        // Decay blue progress first
+                        point.captureProgress -= CAPTURE_RATE * redInfluence;
+                        if (point.captureProgress <= 0) {
+                            point.captureProgress = 0;
+                            point.capturedBy = null;
+                        }
+                    } else {
+                        // Build red progress
+                        point.captureProgress -= CAPTURE_RATE * redInfluence;
+                        if (point.captureProgress <= -MAX_CAPTURE_PROGRESS) {
+                            point.captureProgress = -MAX_CAPTURE_PROGRESS;
+                            point.capturedBy = 'red';
+                            // Victory for red team
+                            showGameEndScreen(false);
+                        }
+                    }
+                }
+                // If contested (both teams present), progress pauses
+                
+                updateScoreUI();
+            });
+        }
+        
+        function updateCooldownUI() {
+            if (!activeHero || !activeHero.abilities) return;
+            const now = Date.now();
+
+            Object.keys(activeHero.abilities).forEach(key => {
+                const ability = activeHero.abilities[key];
+                const slotEl = document.getElementById(`ability-${key === 'Ult' ? 'Ult' : key}`);
+                if (!slotEl) return;
+
+                if (key === 'Ult') {
+                    const chargeEl = slotEl.querySelector('.charge-overlay');
+                    const chargePercent = (player.ultCharge / ULT_MAX_CHARGE) * 100;
+                    chargeEl.style.height = `${100 - chargePercent}%`;
+
+                    if (player.ultCharge >= ULT_MAX_CHARGE) {
+                        slotEl.classList.add('ready');
+                        slotEl.style.boxShadow = "0 0 20px gold";
+                    } else {
+                        slotEl.classList.remove('ready');
+                        slotEl.style.boxShadow = "none";
+                    }
+                } else {
+                    const overlayEl = slotEl.querySelector('.cooldown-overlay');
+                    const cooldownEnd = abilityCooldowns[key];
+
+                    if (cooldownEnd && cooldownEnd > now) {
+                        const remaining = cooldownEnd - now;
+                        const percentage = (remaining / ability.cooldown) * 100;
+
+                        overlayEl.style.height = `${percentage}%`;
+
+                        let textEl = slotEl.querySelector(".cooldown-text");
+                        if (!textEl) {
+                            textEl = document.createElement("div");
+                            textEl.className = "cooldown-text";
+                            textEl.style.position = "absolute";
+                            textEl.style.top = "50%";
+                            textEl.style.left = "50%";
+                            textEl.style.transform = "translate(-50%, -50%)";
+                            textEl.style.fontSize = "14px";
+                            textEl.style.fontWeight = "bold";
+                            textEl.style.color = "#fff";
+                            textEl.style.textShadow = "0 0 5px black";
+                            slotEl.appendChild(textEl);
+                        }
+                        textEl.textContent = (remaining / 1000).toFixed(1);
+
+                        slotEl.classList.remove('ready');
+                    } else {
+                        const overlayEl = slotEl.querySelector('.cooldown-overlay');
+                        if (overlayEl) overlayEl.style.height = '0%';
+
+                        const textEl = slotEl.querySelector(".cooldown-text");
+                        if (textEl) textEl.remove();
+
+                        slotEl.classList.add('ready');
+                    }
+                }
+            });
+        }
+
+        // --- DRAWING ---
+        function drawBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, "#0a0a18");
+            gradient.addColorStop(1, "#151530");
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "rgba(255,255,255,0.05)";
+            for (let i = 0; i < 30; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.fillRect(x, y, 1, 1);
+            }
+        }
+
+        function drawHexGrid() {
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            const hexHeight = HEX_SIZE * 2;
+            const hexWidth = Math.sqrt(3) * HEX_SIZE;
+            const vertDist = hexHeight * 3 / 4;
+            const startX = Math.floor(camera.x / hexWidth) * hexWidth - hexWidth;
+            const startY = Math.floor(camera.y / vertDist) * vertDist - vertDist;
+            const endX = startX + canvas.width + hexWidth * 2;
+            const endY = startY + canvas.height + vertDist * 2;
+
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 0;
+
+            for (let y = startY; y < endY; y += vertDist) {
+                for (let x = startX; x < endX; x += hexWidth) {
+                    const offsetX = (y / vertDist) % 2 === 1 ? hexWidth / 2 : 0;
+
+                    const dx = (x + offsetX) - player.x;
+                    const dy = y - player.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const maxDist = 600;
+
+                    const alpha = Math.max(0.05, 1 - dist / maxDist);
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${alpha * 0.2})`;
+
+                    drawHexagon(x + offsetX, y, HEX_SIZE);
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawHexagon(x, y, size) {
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i;
+                const xPos = x + size * Math.cos(angle);
+                const yPos = y + size * Math.sin(angle);
+                if (i === 0) ctx.moveTo(xPos, yPos);
+                else ctx.lineTo(xPos, yPos);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        function drawSpawnAreas() {
+            if (gameState !== 'playing' && gameState !== 'paused') return;
+
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            const time = Date.now() / 600;
+            const pulse = (Math.sin(Date.now() / 400) + 1) / 2;
+
+            // Draw blue spawn area
+            const blueGradient = ctx.createRadialGradient(
+                blueSpawnArea.x, blueSpawnArea.y, blueSpawnArea.radius * 0.2,
+                blueSpawnArea.x, blueSpawnArea.y, blueSpawnArea.radius
+            );
+            blueGradient.addColorStop(0, `rgba(0, 170, 255, ${0.15 + 0.15 * pulse})`);
+            blueGradient.addColorStop(1, 'rgba(0, 170, 255, 0)');
+            ctx.fillStyle = blueGradient;
+            ctx.beginPath();
+            ctx.arc(blueSpawnArea.x, blueSpawnArea.y, blueSpawnArea.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = `rgba(0, 170, 255, ${0.6 + 0.4 * pulse})`;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = colors.blueTeam;
+            ctx.shadowBlur = 40;
+            ctx.beginPath();
+            ctx.arc(blueSpawnArea.x, blueSpawnArea.y, blueSpawnArea.radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw red spawn area
+            const redGradient = ctx.createRadialGradient(
+                redSpawnArea.x, redSpawnArea.y, redSpawnArea.radius * 0.2,
+                redSpawnArea.x, redSpawnArea.y, redSpawnArea.radius
+            );
+            redGradient.addColorStop(0, `rgba(255, 51, 51, ${0.15 + 0.15 * pulse})`);
+            redGradient.addColorStop(1, 'rgba(255, 51, 51, 0)');
+            ctx.fillStyle = redGradient;
+            ctx.beginPath();
+            ctx.arc(redSpawnArea.x, redSpawnArea.y, redSpawnArea.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = `rgba(255, 51, 51, ${0.6 + 0.4 * pulse})`;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = colors.redTeam;
+            ctx.shadowBlur = 40;
+            ctx.beginPath();
+            ctx.arc(redSpawnArea.x, redSpawnArea.y, redSpawnArea.radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawCapturePoints() {
+            if (gameState !== 'playing' && gameState !== 'paused') return;
+
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            capturePoints.forEach(point => {
+                // Determine color based on capture progress
+                let color;
+                if (point.capturedBy === 'blue') {
+                    const intensity = point.captureProgress / MAX_CAPTURE_PROGRESS;
+                    color = `rgba(0, 170, 255, ${0.3 + 0.3 * intensity})`;
+                } else if (point.capturedBy === 'red') {
+                    const intensity = -point.captureProgress / MAX_CAPTURE_PROGRESS;
+                    color = `rgba(255, 51, 51, ${0.3 + 0.3 * intensity})`;
+                } else {
+                    // Neutral
+                    color = 'rgba(255, 255, 0, 0.3)';
+                }
+
+                // Draw capture point
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, point.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw border
+                ctx.strokeStyle = color.replace('0.3', '0.8');
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, point.radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Draw capture progress indicator
+                if (point.captureProgress !== 0) {
+                    const progressAngle = (Math.abs(point.captureProgress) / MAX_CAPTURE_PROGRESS) * Math.PI * 2;
+                    const startAngle = point.captureProgress > 0 ? -Math.PI / 2 : Math.PI / 2;
+                    const endAngle = startAngle + (point.captureProgress > 0 ? progressAngle : -progressAngle);
+
+                    ctx.strokeStyle = point.captureProgress > 0 ? 'rgba(0, 170, 255, 0.8)' : 'rgba(255, 51, 51, 0.8)';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, point.radius + 10, startAngle, endAngle);
+                    ctx.stroke();
+                }
+
+                // Draw center icon
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('⚑', point.x, point.y);
+                
+                // Draw progress percentage
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.font = 'bold 16px Arial';
+                const progressText = point.capturedBy === 'blue' ? 
+                    `${Math.round(point.captureProgress)}%` : 
+                    point.capturedBy === 'red' ? 
+                    `${Math.round(-point.captureProgress)}%` : 
+                    '0%';
+                ctx.fillText(progressText, point.x, point.y + 40);
+            });
+
+            ctx.restore();
+        }
+
+// --- UPDATED DRAWING WITH TEAM OUTLINES ---
+		function drawPlayer() {
+    if (gameState !== 'playing' && gameState !== 'paused') return;
+    if (player.isDead) return;
+
+    ctx.save();
+    ctx.translate(player.x - camera.x, player.y - camera.y);
+    ctx.rotate(player.angle);
+
+    const heroColor = activeHero ? activeHero.color : colors.player;
+
+    // Apply invisibility effect
+    if (player.isInvisible) {
+        ctx.globalAlpha = 0.3;
+    }
+
+    // Draw team outline
+    ctx.strokeStyle = 'rgba(0, 170, 255, 0.5)';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(0, 170, 255, 0.8)';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.moveTo(PLAYER_SIZE * 1.4, 0);
+    ctx.lineTo(-PLAYER_SIZE, -PLAYER_SIZE * 0.7);
+    ctx.lineTo(-PLAYER_SIZE * 0.4, 0);
+    ctx.lineTo(-PLAYER_SIZE, PLAYER_SIZE * 0.7);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Draw hero with individual color
+    const gradient = ctx.createLinearGradient(-PLAYER_SIZE, -PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE);
+    gradient.addColorStop(0, heroColor);
+    gradient.addColorStop(1, '#ffffff');
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = heroColor;
+    ctx.shadowBlur = 25;
+    ctx.fill();
+
+    const coreRadius = PLAYER_SIZE * 0.4;
+    const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius);
+    coreGradient.addColorStop(0, 'rgba(255,255,255,0.9)');
+    coreGradient.addColorStop(0.5, heroColor);
+    coreGradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = coreGradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+		
+		function drawTeammates() {
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+
+    teammates.forEach(teammate => {
+        if (teammate.isDead) return;
+
+        ctx.save();
+        ctx.translate(teammate.x, teammate.y);
+        ctx.rotate(teammate.angle);
+
+        const heroColor = teammate.hero.color;
+
+        // Apply invisibility effect
+        if (teammate.isInvisible) {
+            ctx.globalAlpha = 0.3;
+        }
+
+        // Draw team outline
+        ctx.strokeStyle = 'rgba(0, 170, 255, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = 'rgba(0, 170, 255, 0.8)';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.moveTo(PLAYER_SIZE * 1.4, 0);
+        ctx.lineTo(-PLAYER_SIZE, -PLAYER_SIZE * 0.7);
+        ctx.lineTo(-PLAYER_SIZE * 0.4, 0);
+        ctx.lineTo(-PLAYER_SIZE, PLAYER_SIZE * 0.7);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Draw hero with individual color
+        const gradient = ctx.createLinearGradient(-PLAYER_SIZE, -PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE);
+        gradient.addColorStop(0, heroColor);
+        gradient.addColorStop(1, '#ffffff');
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = heroColor;
+        ctx.shadowBlur = 25;
+        ctx.fill();
+
+        const coreRadius = PLAYER_SIZE * 0.4;
+        const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius);
+        coreGradient.addColorStop(0, 'rgba(255,255,255,0.9)');
+        coreGradient.addColorStop(0.5, heroColor);
+        coreGradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = coreGradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw teammate indicator
+        ctx.fillStyle = 'rgba(0, 170, 255, 0.8)';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('[AI]', 0, -PLAYER_SIZE - 10);
+
+        ctx.restore();
+    });
+
+    ctx.restore();
+}
+		
+		function drawEnemies() {
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+
+    enemies.forEach(enemy => {
+        if (enemy.isDead) return;
+
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        ctx.rotate(enemy.angle);
+
+        const heroColor = enemy.hero.color;
+
+        // Apply invisibility effect but make it visible to player
+        if (enemy.isInvisible) {
+            ctx.globalAlpha = 0.3 + 0.2 * Math.sin(Date.now() / 100);
+            
+            // Add a subtle outline to make it more visible
+            ctx.strokeStyle = 'rgba(157, 41, 51, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, PLAYER_SIZE * 1.5, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Draw team outline
+        ctx.strokeStyle = 'rgba(255, 51, 51, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = 'rgba(255, 51, 51, 0.8)';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.moveTo(PLAYER_SIZE * 1.4, 0);
+        ctx.lineTo(-PLAYER_SIZE, -PLAYER_SIZE * 0.7);
+        ctx.lineTo(-PLAYER_SIZE * 0.4, 0);
+        ctx.lineTo(-PLAYER_SIZE, PLAYER_SIZE * 0.7);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Draw hero with individual color
+        const gradient = ctx.createLinearGradient(-PLAYER_SIZE, -PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE);
+        gradient.addColorStop(0, heroColor);
+        gradient.addColorStop(1, '#ffffff');
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = heroColor;
+        ctx.shadowBlur = 25;
+        ctx.fill();
+
+        const coreRadius = PLAYER_SIZE * 0.4;
+        const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius);
+        coreGradient.addColorStop(0, 'rgba(255,255,255,0.9)');
+        coreGradient.addColorStop(0.5, heroColor);
+        coreGradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = coreGradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw enemy indicator
+        ctx.fillStyle = 'rgba(255, 51, 51, 0.8)';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('[AI]', 0, -PLAYER_SIZE - 10);
+
+        ctx.restore();
+    });
+
+    ctx.restore();
+}       
+		
+		function drawProjectiles() {
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            projectiles.forEach(p => {
+                const heroColor = p.owner ? p.owner.hero.color : colors.player;
+
+                const trailLength = p.size * 6; 
+                const angle = Math.atan2(p.vy, p.vx);
+
+                const trailGradient = ctx.createLinearGradient(
+                    p.x - Math.cos(angle) * trailLength, p.y - Math.sin(angle) * trailLength,
+                    p.x, p.y
+                );
+                
+                if (p.type === 'silencerRound') {
+                    trailGradient.addColorStop(0, 'transparent');
+                    trailGradient.addColorStop(0.6, 'rgba(157, 41, 51, 0.3)');
+                    trailGradient.addColorStop(1, '#9D2933');
+                } else {
+                    trailGradient.addColorStop(0, 'transparent');
+                    trailGradient.addColorStop(0.6, `${heroColor}55`);
+                    trailGradient.addColorStop(1, heroColor);
+                }
+
+                ctx.strokeStyle = trailGradient;
+                ctx.lineWidth = Math.max(2, p.size * 0.8);
+                ctx.beginPath();
+                ctx.moveTo(p.x - Math.cos(angle) * trailLength, p.y - Math.sin(angle) * trailLength);
+                ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+
+                const coreGradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 1.5);
+                coreGradient.addColorStop(0, '#fff');
+                coreGradient.addColorStop(0.3, p.type === 'silencerRound' ? '#9D2933' : heroColor);
+                coreGradient.addColorStop(1, 'transparent');
+
+                ctx.fillStyle = coreGradient;
+                ctx.shadowColor = p.type === 'silencerRound' ? '#9D2933' : heroColor;
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * 1.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                const pulse = (Math.sin(Date.now() / 100 + p.x + p.y) + 1) / 2;
+                ctx.strokeStyle = `rgba(255,255,255,${0.2 + 0.5 * pulse})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * (1.5 + 0.5 * pulse), 0, Math.PI * 2);
+                ctx.stroke();
+            });
+
+            ctx.restore();
+        }
+
+        function drawActiveAbilities() {
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+            activeAbilities.forEach(a => {
+                if (a.type === 'explosion') {
+                    const opacity = a.lifetime / 200;
+                    ctx.fillStyle = `rgba(0, 255, 255, ${opacity * 0.3})`;
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                } else if (a.type === 'radiantShockwave') {
+                    const opacity = a.lifetime / 300;
+                    const gradient = ctx.createLinearGradient(
+                        a.x, a.y,
+                        a.x + Math.cos(a.angle) * a.range,
+                        a.y + Math.sin(a.angle) * a.range
+                    );
+                    gradient.addColorStop(0, `rgba(255, 215, 0, ${opacity})`);
+                    gradient.addColorStop(1, `rgba(255, 215, 0, 0)`);
+                    
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(a.x + Math.cos(a.angle) * a.range, a.y + Math.sin(a.angle) * a.range);
+                    ctx.stroke();
+                    
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${opacity * 0.5})`;
+                    ctx.lineWidth = 2;
+                    const rippleRadius = (1 - opacity) * a.range;
+                    ctx.beginPath();
+                    ctx.arc(a.x, a.y, rippleRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (a.type === 'guardBash') {
+                    const opacity = a.lifetime / 200;
+                    ctx.fillStyle = `rgba(255, 215, 0, ${opacity * 0.3})`;
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${opacity})`;
+                    ctx.lineWidth = 3;
+                    
+                    const width = a.range;
+                    const height = a.range / 2;
+                    ctx.save();
+                    ctx.translate(a.x, a.y);
+                    ctx.rotate(a.angle);
+                    ctx.fillRect(0, -height/2, width, height);
+                    ctx.strokeRect(0, -height/2, width, height);
+                    ctx.restore();
+                } else if (a.type === 'wardProjection') {
+                    const opacity = 0.8;
+                    ctx.save();
+                    ctx.translate(a.x, a.y);
+                    ctx.rotate(a.rotation);
+                    
+                    ctx.fillStyle = `rgba(255, 215, 0, ${opacity * 0.2})`;
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${opacity})`;
+                    ctx.lineWidth = 2;
+                    
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (Math.PI / 3) * i;
+                        const x = Math.cos(angle) * a.radius;
+                        const y = Math.sin(angle) * a.radius;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(x, y);
+                        ctx.stroke();
+                        
+                        ctx.save();
+                        ctx.translate(x, y);
+                        drawHexagon(0, 0, 10);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                    
+                    drawHexagon(0, 0, a.radius * 0.5);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    const healthPercent = a.health / a.maxHealth;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.fillRect(-a.radius, -a.radius - 15, a.radius * 2, 5);
+                    ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+                    ctx.fillRect(-a.radius, -a.radius - 15, a.radius * 2 * healthPercent, 5);
+                    
+                    ctx.restore();
+                } else if (a.type === 'bulwarkLeap') {
+                    const progress = 1 - (a.lifetime / 600);
+                    if (progress < 0.5) {
+                        const trailProgress = progress * 2;
+                        const gradient = ctx.createLinearGradient(
+                            a.startX, a.startY,
+                            a.endX, a.endY
+                        );
+                        gradient.addColorStop(0, `rgba(255, 215, 0, ${1 - trailProgress})`);
+                        gradient.addColorStop(trailProgress, `rgba(255, 215, 0, ${1 - trailProgress})`);
+                        gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                        
+                        ctx.strokeStyle = gradient;
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.moveTo(a.startX, a.startY);
+                        ctx.lineTo(a.endX, a.endY);
+                        ctx.stroke();
+                    } else {
+                        const impactProgress = (progress - 0.5) * 2;
+                        const radius = impactProgress * a.tauntRadius;
+                        
+                        ctx.strokeStyle = `rgba(255, 215, 0, ${1 - impactProgress})`;
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.arc(a.endX, a.endY, radius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                } else if (a.type === 'sanctuaryDome') {
+                    const opacity = 0.8;
+                    const gradient = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, a.radius);
+                    gradient.addColorStop(0, `rgba(255, 215, 0, ${opacity * 0.1})`);
+                    gradient.addColorStop(0.7, `rgba(255, 215, 0, ${opacity * 0.05})`);
+                    gradient.addColorStop(1, `rgba(255, 215, 0, 0)`);
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.save();
+                    ctx.translate(a.x, a.y);
+                    ctx.rotate(a.rotation);
+                    
+                    const hexSize = 30;
+                    const hexHeight = hexSize * 2;
+                    const hexWidth = Math.sqrt(3) * hexSize;
+                    const vertDist = hexHeight * 3 / 4;
+                    
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${opacity * 0.3})`;
+                    ctx.lineWidth = 1;
+                    
+                    for (let y = -a.radius; y < a.radius; y += vertDist) {
+                        for (let x = -a.radius; x < a.radius; x += hexWidth) {
+                            const offsetX = (y / vertDist) % 2 === 1 ? hexWidth / 2 : 0;
+                            const dist = Math.sqrt((x + offsetX) * (x + offsetX) + y * y);
+                            
+                            if (dist < a.radius - hexSize) {
+                                const hexOpacity = opacity * 0.3 * (0.5 + 0.5 * Math.sin(Date.now() / 500 + x / 50 + y / 50));
+                                ctx.strokeStyle = `rgba(255, 215, 0, ${hexOpacity})`;
+                                drawHexagon(x + offsetX, y, hexSize);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                    
+                    ctx.restore();
+                    
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${opacity})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (a.type === 'shieldSparks') {
+                    const opacity = a.lifetime / 100;
+                    for (let i = 0; i < 5; i++) {
+                        const angle = (Math.PI * 2 / 5) * i + Date.now() / 100;
+                        const dist = 10 * (1 - opacity);
+                        const x = a.x + Math.cos(angle) * dist;
+                        const y = a.y + Math.sin(angle) * dist;
+                        
+                        ctx.fillStyle = `rgba(255, 215, 0, ${opacity})`;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                } else if (a.type === 'repulsionWave') {
+                    ctx.fillStyle = 'rgba(0, 255, 255, 0.2)';
+                    ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.arc(a.x, a.y, a.radius, a.angle - Math.PI/4, a.angle + Math.PI/4);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                } else if (a.type === 'singularityOrb') {
+                    const lifeProgress = a.lifetime / a.totalLifetime;
+                    ctx.save();
+                    ctx.translate(a.x, a.y);
+                    ctx.rotate(a.rotation);
+                    ctx.globalAlpha = lifeProgress;
+                    ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI * 2); ctx.stroke();
+                    ctx.rotate(-a.rotation * 2);
+                    ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.stroke();
+                    ctx.restore();
+                } else if (a.type === 'gravityWell') {
+                    const fadeProgress = a.fadeProgress || 0;
+                    const opacity = 0.3 - fadeProgress * 0.3;
+                    
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${opacity})`;
+                    ctx.lineWidth = 1;
+                    for(let i = 0; i < 3; i++) {
+                        ctx.globalAlpha = opacity - i * 0.1;
+                        ctx.beginPath();
+                        ctx.arc(a.x, a.y, a.radius * (1 + i * 0.3), 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1;
+                } else if (a.type === 'eventHorizon') {
+                    const fadeProgress = a.fadeProgress || 0;
+                    const opacity = 0.8 - fadeProgress * 0.8;
+                    
+                    ctx.save();
+                    ctx.translate(a.x, a.y);
+                    ctx.rotate(a.rotation);
+                    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, a.radius);
+                    gradient.addColorStop(0, `rgba(0, 0, 0, ${0.8 * opacity})`);
+                    gradient.addColorStop(0.5, `rgba(255, 215, 0, ${0.2 * opacity})`);
+                    gradient.addColorStop(1, `rgba(255, 215, 0, 0)`);
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, a.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${0.5 * opacity})`;
+                    ctx.lineWidth = 3;
+                    for(let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, a.radius * (0.2 + i * 0.3), 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                } else if (a.type === 'shadowKnife') {
+                    const opacity = a.lifetime / 150;
+                    ctx.save();
+                    ctx.translate(a.x, a.y);
+                    ctx.rotate(a.angle);
+                    
+                    // Draw knife slash
+                    ctx.strokeStyle = `rgba(157, 41, 51, ${opacity})`;
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -a.range/2);
+                    ctx.lineTo(a.range, 0);
+                    ctx.lineTo(0, a.range/2);
+                    ctx.stroke();
+                    
+                    // Draw hit effect
+                    if (a.hit) {
+                        ctx.fillStyle = `rgba(255, 0, 0, ${opacity * 0.5})`;
+                        ctx.beginPath();
+                        ctx.arc(a.range, 0, 20, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    ctx.restore();
+                } else if (a.type === 'shadowmeld') {
+                    const opacity = a.lifetime / 3000;
+                    ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(a.x, a.y, 50, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = `rgba(157, 41, 51, ${opacity * 0.3})`;
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.arc(a.x, a.y, 20 + i * 15, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                } else if (a.type === 'phaseDash') {
+                    const opacity = a.lifetime / 200;
+                    const gradient = ctx.createLinearGradient(a.startX, a.startY, a.endX, a.endY);
+                    gradient.addColorStop(0, `rgba(157, 41, 51, ${opacity})`);
+                    gradient.addColorStop(1, `rgba(157, 41, 51, 0)`);
+                    
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(a.startX, a.startY);
+                    ctx.lineTo(a.endX, a.endY);
+                    ctx.stroke();
+                    
+                    // Draw shadow copies
+                    for (let i = 0; i < 3; i++) {
+                        const t = (i + 1) / 4;
+                        const x = a.startX + (a.endX - a.startX) * t;
+                        const y = a.startY + (a.endY - a.startY) * t;
+                        
+                        ctx.fillStyle = `rgba(157, 41, 51, ${opacity * (1 - t)})`;
+                        ctx.beginPath();
+                        ctx.arc(x, y, PLAYER_SIZE * 0.8, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                } else if (a.type === 'deathMark') {
+                    const opacity = a.lifetime / 500;
+                    
+                    // Draw death mark on target
+                    ctx.strokeStyle = `rgba(157, 41, 51, ${opacity})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(a.target.x - 20, a.target.y - 20);
+                    ctx.lineTo(a.target.x + 20, a.target.y + 20);
+                    ctx.moveTo(a.target.x + 20, a.target.y - 20);
+                    ctx.lineTo(a.target.x - 20, a.target.y + 20);
+                    ctx.stroke();
+                    
+                    // Draw execution effect
+                    ctx.fillStyle = `rgba(255, 0, 0, ${opacity * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(a.target.x, a.target.y, 30, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Draw teleport trail
+                    const gradient = ctx.createLinearGradient(a.startX, a.startY, a.target.x, a.target.y);
+                    gradient.addColorStop(0, `rgba(157, 41, 51, ${opacity})`);
+                    gradient.addColorStop(1, `rgba(157, 41, 51, 0)`);
+                    
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(a.startX, a.startY);
+                    ctx.lineTo(a.target.x, a.target.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            });
+            ctx.restore();
+        }        
+        
+        function drawReselectProgress() {
+            if (gameState !== 'playing' || rHoldProgress <= 0) return;
+            ctx.save();
+            ctx.translate(player.x - camera.x, player.y - camera.y);
+            const radius = PLAYER_SIZE + 15;
+            const startAngle = -Math.PI / 2;
+            const endAngle = startAngle + (Math.PI * 2 * rHoldProgress);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, startAngle, endAngle);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawReselectHint() {
+            if (gameState !== 'playing' || !isPlayerInSpawnArea()) return;
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = 'bold 24px "Orbitron", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 5;
+            ctx.fillText('Hold R to change hero', canvas.width / 2, 100);
+            ctx.restore();
+        }
+
+        function drawParticles() {
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            particles.forEach(p => {
+                const flicker = 0.6 + 0.4 * Math.sin(Date.now() / 200 + p.x * 0.1 + p.y * 0.1);
+                ctx.globalAlpha = p.opacity * flicker;
+
+                const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
+                gradient.addColorStop(0, 'rgba(255,255,255,0.9)');
+                gradient.addColorStop(0.4, colors.particle);
+                gradient.addColorStop(1, 'transparent');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (Math.random() < 0.0005) {
+                    const streakLength = 50;
+                    ctx.strokeStyle = `rgba(255,255,255,0.7)`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p.x - streakLength, p.y - streakLength * 0.3);
+                    ctx.stroke();
+                }
+            });
+
+            ctx.globalAlpha = 1;
+            ctx.restore();
+        }
+
+        function drawCursor() {
+            if (gameState === 'mainMenu' || gameState === 'paused' || gameState === 'heroSelect') return;
+            ctx.strokeStyle = colors.cursor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(mouse.x - 10, mouse.y);
+            ctx.lineTo(mouse.x + 10, mouse.y);
+            ctx.moveTo(mouse.x, mouse.y - 10);
+            ctx.lineTo(mouse.x, mouse.y + 10);
+            ctx.stroke();
+        }
+        
+        function drawMinimap() {
+            if (gameState !== 'playing') return;
+            
+            const scale = 200 / WORLD_WIDTH;
+            
+            // Clear minimap
+            minimapCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            minimapCtx.fillRect(0, 0, 200, 200);
+            
+            // Draw capture points
+            capturePoints.forEach(point => {
+                let color;
+                if (point.capturedBy === 'blue') {
+                    color = 'rgba(0, 170, 255, 0.8)';
+                } else if (point.capturedBy === 'red') {
+                    color = 'rgba(255, 51, 51, 0.8)';
+                } else {
+                    color = 'rgba(255, 255, 0, 0.8)';
+                }
+                
+                minimapCtx.fillStyle = color;
+                minimapCtx.beginPath();
+                minimapCtx.arc(point.x * scale, point.y * scale, 5, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            // Draw spawn areas
+            minimapCtx.strokeStyle = 'rgba(0, 170, 255, 0.5)';
+            minimapCtx.lineWidth = 1;
+            minimapCtx.beginPath();
+            minimapCtx.arc(blueSpawnArea.x * scale, blueSpawnArea.y * scale, blueSpawnArea.radius * scale, 0, Math.PI * 2);
+            minimapCtx.stroke();
+            
+            minimapCtx.strokeStyle = 'rgba(255, 51, 51, 0.5)';
+            minimapCtx.beginPath();
+            minimapCtx.arc(redSpawnArea.x * scale, redSpawnArea.y * scale, redSpawnArea.radius * scale, 0, Math.PI * 2);
+            minimapCtx.stroke();
+            
+            // Draw player
+            minimapCtx.fillStyle = 'rgba(0, 255, 255, 1)';
+            minimapCtx.beginPath();
+            minimapCtx.arc(player.x * scale, player.y * scale, 3, 0, Math.PI * 2);
+            minimapCtx.fill();
+            
+            // Draw teammates
+            teammates.forEach(teammate => {
+                if (teammate.isDead) return;
+                minimapCtx.fillStyle = 'rgba(0, 170, 255, 0.8)';
+                minimapCtx.beginPath();
+                minimapCtx.arc(teammate.x * scale, teammate.y * scale, 2, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            // Draw enemies
+            enemies.forEach(enemy => {
+                if (enemy.isDead) return;
+                minimapCtx.fillStyle = 'rgba(255, 51, 51, 0.8)';
+                minimapCtx.beginPath();
+                minimapCtx.arc(enemy.x * scale, enemy.y * scale, 2, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            // Draw viewport
+            minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            minimapCtx.lineWidth = 1;
+            minimapCtx.strokeRect(
+                camera.x * scale,
+                camera.y * scale,
+                canvas.width * scale,
+                canvas.height * scale
+            );
+        }
+
+        // --- MAIN GAME LOOP ---
+        function gameLoop() {
+            updatePlayer();
+            updateCamera();
+            updateParticles();
+            updateReselect();
+            updateProjectiles();
+            updateActiveAbilities();
+            updateReload();
+            updateCooldownUI();
+            updateCapturePoints();
+            
+            // Update AI teammates
+            teammates.forEach(teammate => {
+                updateAI(teammate);
+            });
+            
+            // Update AI enemies
+            enemies.forEach(enemy => {
+                updateAI(enemy);
+            });
+            
+            // Check for respawns
+            if (player.isDead && Date.now() - player.deathTime > RESPAWN_TIME) {
+                respawnCharacter(player);
+            }
+            
+            teammates.forEach(teammate => {
+                if (teammate.isDead && Date.now() - teammate.deathTime > RESPAWN_TIME) {
+                    respawnCharacter(teammate);
+                }
+            });
+            
+            enemies.forEach(enemy => {
+                if (enemy.isDead && Date.now() - enemy.deathTime > RESPAWN_TIME) {
+                    respawnCharacter(enemy);
+                }
+            });
+            
+            // Update UI
+            if (gameState === 'playing') {
+                if (isPlayerInSpawnArea()) {
+                    heroUIEl.classList.add('hero-ui-active');
+                } else {
+                    heroUIEl.classList.remove('hero-ui-active');
+                }
+                const healthPercent = (player.health / player.maxHealth) * 100;
+                healthBarFillEl.style.width = `${healthPercent}%`;
+                
+                updateTeamUI();
+            }
+
+            // Draw everything
+            drawBackground();
+            drawHexGrid();
+            drawParticles();
+            drawSpawnAreas();
+            drawCapturePoints();
+            drawTeammates();
+            drawEnemies();
+            drawActiveAbilities();
+            drawProjectiles();
+            drawPlayer();
+            drawReselectProgress();
+            drawReselectHint();
+            drawCursor();
+            drawMinimap();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- START ---
+        init();
+        gameLoop();
+    </script>
+</body>
+</html>
